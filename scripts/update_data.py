@@ -8,13 +8,14 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-from scrapers.utools_mashin import build_courses_from_url_file
+from scrapers.utools_mashin import build_courses_from_url_file, load_replacement_map, norm_key
 from scrapers.gametora_sources import scrape_sources_from_skills, clean_text
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / 'data' / 'site-data.json'
 LOG_PATH = ROOT / 'data' / 'update-log.json'
 URL_FILE = ROOT / 'config' / 'track_urls.txt'
+UTOOLS_REPLACEMENTS = ROOT / 'config' / 'utools_replacements.json'
 GAMETORA_SKILLS_URL = 'https://gametora.com/ko/umamusume/skills'
 
 def norm(s):
@@ -206,8 +207,45 @@ def has_real_urls():
         if line and not line.startswith('#'): return True
     return False
 
+
+def build_skill_translation_map(existing):
+    """utools 일본어 스킬명을 사이트의 한글 스킬명으로 맞추기 위한 맵.
+
+    우선순위:
+    1) data/site-data.json 안의 GameTora meta.jp -> 한글 스킬명
+    2) config/utools_replacements.json 안의 Tampermonkey 치환표
+    """
+    out = {}
+
+    def add(src, dst):
+        src = clean_text(src)
+        dst = clean_text(dst)
+        if not src or not dst:
+            return
+        out.setdefault(src, dst)
+        out.setdefault(norm_key(src), dst)
+
+    # 사용자가 쓰던 Tampermonkey 치환표 기반.
+    for jp, ko in load_replacement_map(UTOOLS_REPLACEMENTS).items():
+        add(jp, ko)
+
+    # 기존 사이트 데이터의 GameTora 메타가 더 정확한 경우가 많으므로 덮어쓴다.
+    for skill in existing.get('skills', []) or []:
+        ko = skill.get('name')
+        meta = skill.get('meta') or {}
+        jp = meta.get('jp') or meta.get('ja') or ''
+        if jp and ko:
+            jp = clean_text(jp)
+            ko = clean_text(ko)
+            out[jp] = ko
+            out[norm_key(jp)] = ko
+
+    print(f"Utools translation map loaded: {len(out)} keys")
+    return out
+
 def main():
     existing = json.loads(DATA_PATH.read_text(encoding='utf-8'))
+    skill_translation_map = build_skill_translation_map(existing)
     log = {'startedAt': datetime.now(timezone.utc).isoformat(), 'mode':'auto'}
     driver = make_driver()
     try:
@@ -224,6 +262,7 @@ def main():
                 URL_FILE,
                 existing_courses=courses,
                 old_styles=styles,
+                skill_name_map=skill_translation_map,
             )
             styles = courses[0]['styles'] if courses else styles
             log['mashin'] = mashin_logs
