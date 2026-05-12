@@ -418,6 +418,73 @@ def wait_page_ready(driver, timeout=20):
 
 
 
+
+
+
+def click_show_all_skills(driver, wait=None, timeout=12):
+    """GameTora 스킬 목록 페이지에서 [전체 보기]를 눌러 50개 제한을 해제한다.
+
+    - 이미 전체 표시 상태면 조용히 넘어간다.
+    - 실패해도 스크래핑 전체를 중단하지 않고 기존 50개 표시 상태로 계속 진행한다.
+    """
+    before_count = 0
+    try:
+        before_count = driver.execute_script("return document.querySelectorAll('[class*=\"table_row_ja\"]').length || 0;") or 0
+    except Exception:
+        before_count = 0
+
+    try:
+        clicked = driver.execute_script(
+            """
+            const visible = el => {
+              if (!el) return false;
+              const r = el.getBoundingClientRect();
+              const st = getComputedStyle(el);
+              return r.width > 0 && r.height > 0 && st.display !== 'none' && st.visibility !== 'hidden' && st.opacity !== '0';
+            };
+            const candidates = [...document.querySelectorAll('a, button, span, div')]
+              .filter(visible)
+              .map(el => ({ el, text: (el.innerText || el.textContent || '').trim() }))
+              .filter(x => x.text === '전체 보기' || x.text.includes('전체 보기'));
+            if (!candidates.length) return { clicked:false, reason:'not-found' };
+            candidates.sort((a, b) => a.text.length - b.text.length);
+            let target = candidates[0].el;
+            const clickable = target.closest('a, button');
+            if (clickable) target = clickable;
+            target.scrollIntoView({ block:'center', inline:'center' });
+            const r = target.getBoundingClientRect();
+            const opts = { bubbles:true, cancelable:true, view:window, clientX:r.left + r.width/2, clientY:r.top + r.height/2, button:0 };
+            for (const type of ['pointerover','mouseover','pointerdown','mousedown','pointerup','mouseup','click']) {
+              target.dispatchEvent(new MouseEvent(type, opts));
+            }
+            return { clicked:true, text:candidates[0].text };
+            """
+        )
+    except Exception as e:
+        print(f"GameTora 전체 보기 클릭 스킵: {type(e).__name__}")
+        return False
+
+    if not clicked or not clicked.get('clicked'):
+        print(f"GameTora 전체 보기 버튼 없음 또는 이미 전체 표시: rows={before_count}")
+        return False
+
+    # rows가 늘어나거나, 표시 문구가 사라질 때까지 잠깐 대기
+    end = time.time() + timeout
+    after_count = before_count
+    while time.time() < end:
+        try:
+            after_count = driver.execute_script("return document.querySelectorAll('[class*=\"table_row_ja\"]').length || 0;") or 0
+            body_text = driver.execute_script("return document.body ? document.body.innerText : '';") or ''
+            if after_count > before_count or '처음 50개' not in body_text:
+                break
+        except Exception:
+            pass
+        time.sleep(0.4)
+
+    print(f"GameTora 전체 보기 클릭: rows {before_count} -> {after_count}")
+    return True
+
+
 def find_search_input(driver, wait):
 
     selectors = [
@@ -1132,6 +1199,83 @@ def click_row_right_side(driver, row):
 
 
 
+
+
+
+def get_more_button_near_row(driver, row):
+    """현재 row 내부에 [더 보기]가 없을 때, 같은 y좌표 근처의 전역 [더 보기]를 찾는다."""
+    return driver.execute_script(
+        """
+        const row = arguments[0];
+        if (!row) return null;
+        const visible = el => {
+          if (!el) return false;
+          const r = el.getBoundingClientRect();
+          const st = getComputedStyle(el);
+          return r.width > 0 && r.height > 0 && st.display !== 'none' && st.visibility !== 'hidden' && st.opacity !== '0';
+        };
+        const rr = row.getBoundingClientRect();
+        const rowY = rr.top + rr.height / 2;
+        const candidates = [...document.querySelectorAll('a, button, span, div')]
+          .filter(visible)
+          .filter(el => {
+            const text = (el.innerText || el.textContent || '').trim();
+            return text === '더 보기' || text.includes('더 보기');
+          })
+          .map(el => {
+            const r = el.getBoundingClientRect();
+            const text = (el.innerText || el.textContent || '').trim();
+            const tag = (el.tagName || '').toLowerCase();
+            const y = r.top + r.height / 2;
+            let score = 0;
+            score -= Math.abs(y - rowY) * 10;
+            if (text === '더 보기') score += 1000;
+            if (tag === 'a' || tag === 'button') score += 300;
+            if (r.left > rr.left) score += 100;
+            score += Math.max(0, r.left) / 10;
+            const area = r.width * r.height;
+            if (area > 50000) score -= 1000;
+            return { el, score, dy: Math.abs(y - rowY), area };
+          })
+          .filter(x => x.dy <= Math.max(35, rr.height * 1.4));
+        candidates.sort((a,b) => b.score - a.score || a.area - b.area);
+        if (!candidates.length) return null;
+        let target = candidates[0].el;
+        const clickable = target.closest('a, button');
+        if (clickable) return clickable;
+        return target;
+        """,
+        row,
+    )
+
+
+def click_global_right_side(driver, row):
+    """row 폭이 실제 화면 전체를 덮지 않을 때, viewport 오른쪽 같은 높이를 직접 클릭한다."""
+    try:
+        driver.execute_script("arguments[0].scrollIntoView({ block: 'center', inline: 'center' });", row)
+        time.sleep(0.1)
+        return bool(driver.execute_script(
+            """
+            const row = arguments[0];
+            const rr = row.getBoundingClientRect();
+            const x = Math.max(10, window.innerWidth - 45);
+            const y = rr.top + rr.height / 2;
+            const el = document.elementFromPoint(x, y);
+            if (!el) return false;
+            const target = el.closest('a, button, span, div') || el;
+            const r = target.getBoundingClientRect();
+            const opts = { bubbles:true, cancelable:true, view:window, clientX:x, clientY:y, button:0 };
+            for (const type of ['pointerover','mouseover','pointerdown','mousedown','pointerup','mouseup','click']) {
+              target.dispatchEvent(new MouseEvent(type, opts));
+            }
+            return true;
+            """,
+            row,
+        ))
+    except Exception:
+        return False
+
+
 def click_more(driver, row, wait=None, skill_name=None):
 
     """
@@ -1157,8 +1301,8 @@ def click_more(driver, row, wait=None, skill_name=None):
     """
 
     target = get_more_button_from_row(driver, row)
-
-
+    if target is None:
+        target = get_more_button_near_row(driver, row)
 
     errors = []
 
@@ -1248,13 +1392,19 @@ def click_more(driver, row, wait=None, skill_name=None):
 
         time.sleep(0.45)
 
-
-
         if detail_panel_is_open(driver, skill_name):
 
             return
 
+    # 5차: viewport 오른쪽 같은 높이를 전역 클릭
 
+    if click_global_right_side(driver, row):
+
+        time.sleep(0.45)
+
+        if detail_panel_is_open(driver, skill_name):
+
+            return
 
     error_text = " / ".join(errors) if errors else "no target"
 
@@ -2722,6 +2872,8 @@ def main():
 
         time.sleep(2.0)
 
+        click_show_all_skills(driver, wait)
+
 
 
         for idx, skill_name in enumerate(target_skills, start=1):
@@ -2859,6 +3011,7 @@ def scrape_sources_from_skills(skill_names, work_dir=None, test_limit=None):
         driver.get(URL_SKILLS)
         wait_page_ready(driver, timeout=20)
         time.sleep(2.0)
+        click_show_all_skills(driver, wait)
         for idx, skill_name in enumerate(target_skills, start=1):
             print(f"[{idx}/{len(target_skills)}] {skill_name} ... ", end="", flush=True)
             occurrence = occurrence_counter[skill_name]
