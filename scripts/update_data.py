@@ -29,9 +29,67 @@ def make_driver():
     options.add_argument('--disable-blink-features=AutomationControlled')
     return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
+
+
+def click_show_all_skills(driver, timeout=12):
+    before_count = 0
+    try:
+        before_count = driver.execute_script("return document.querySelectorAll('[class*=\"table_row_ja\"]').length || 0;") or 0
+    except Exception:
+        pass
+    try:
+        clicked = driver.execute_script(
+            """
+            const visible = el => {
+              if (!el) return false;
+              const r = el.getBoundingClientRect();
+              const st = getComputedStyle(el);
+              return r.width > 0 && r.height > 0 && st.display !== 'none' && st.visibility !== 'hidden' && st.opacity !== '0';
+            };
+            const candidates = [...document.querySelectorAll('a, button, span, div')]
+              .filter(visible)
+              .map(el => ({ el, text: (el.innerText || el.textContent || '').trim() }))
+              .filter(x => x.text === '전체 보기' || x.text.includes('전체 보기'));
+            if (!candidates.length) return false;
+            candidates.sort((a,b) => a.text.length - b.text.length);
+            let target = candidates[0].el;
+            const clickable = target.closest('a, button');
+            if (clickable) target = clickable;
+            target.scrollIntoView({ block:'center', inline:'center' });
+            const r = target.getBoundingClientRect();
+            const opts = { bubbles:true, cancelable:true, view:window, clientX:r.left+r.width/2, clientY:r.top+r.height/2, button:0 };
+            for (const type of ['pointerover','mouseover','pointerdown','mousedown','pointerup','mouseup','click']) {
+              target.dispatchEvent(new MouseEvent(type, opts));
+            }
+            return true;
+            """
+        )
+    except Exception as e:
+        print(f"GameTora 전체 보기 클릭 스킵: {type(e).__name__}")
+        return False
+    if not clicked:
+        print(f"GameTora 전체 보기 버튼 없음 또는 이미 전체 표시: rows={before_count}")
+        return False
+    end = time.time() + timeout
+    after_count = before_count
+    while time.time() < end:
+        try:
+            after_count = driver.execute_script("return document.querySelectorAll('[class*=\"table_row_ja\"]').length || 0;") or 0
+            body_text = driver.execute_script("return document.body ? document.body.innerText : '';") or ''
+            if after_count > before_count or '처음 50개' not in body_text:
+                break
+        except Exception:
+            pass
+        time.sleep(0.4)
+    print(f"GameTora 전체 보기 클릭: rows {before_count} -> {after_count}")
+    return True
+
+
 def scrape_skill_names(driver):
     driver.get(GAMETORA_SKILLS_URL)
     time.sleep(3)
+    click_show_all_skills(driver)
+    time.sleep(1)
     js = r'''
         const seen = new Set();
         const out = [];
