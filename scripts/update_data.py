@@ -1,4 +1,5 @@
 import json, os, re, time
+from collections import Counter, defaultdict
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -91,19 +92,33 @@ def scrape_skill_names(driver):
     click_show_all_skills(driver)
     time.sleep(1)
     js = r'''
-        const seen = new Set();
         const out = [];
         document.querySelectorAll('[class*="table_row_ja"]').forEach(row => {
           const nameEl = row.querySelector('[class*="table_jpname"]');
           const name = nameEl ? nameEl.innerText.trim() : '';
-          if (!name || seen.has(name)) return;
-          seen.add(name);
+          if (!name) return;
+          // 중요: 여기서 중복 제거하지 않음.
+          // GameTora에는 표시명은 같지만 별도 row인 스킬이 있어,
+          // occurrence_counter로 1번째/2번째 row를 따로 긁어야 한다.
           out.push(name);
         });
         return out;
     '''
-    names = driver.execute_script(js)
-    return [clean_text(x) for x in names if clean_text(x)]
+    names = [clean_text(x) for x in driver.execute_script(js) if clean_text(x)]
+
+    counts = Counter(norm(x) for x in names)
+    dup_keys = [k for k, v in counts.items() if v > 1]
+    if dup_keys:
+        first_name_by_key = {}
+        for name in names:
+            first_name_by_key.setdefault(norm(name), name)
+        examples = [f"{first_name_by_key[k]}×{counts[k]}" for k in dup_keys[:20]]
+        print(f"GameTora skill rows: {len(names)}, unique names: {len(counts)}, duplicate rows: {len(names) - len(counts)}")
+        print("GameTora duplicate examples: " + ", ".join(examples))
+    else:
+        print(f"GameTora skill rows: {len(names)}, unique names: {len(counts)}, duplicate rows: 0")
+
+    return names
 
 def parse_cards(s):
     if not s: return []
@@ -144,13 +159,27 @@ def merge_sources(existing, source_rows, skill_names):
     for old in existing.get('skills', []):
         if old.get('name') and norm(old.get('name')) not in skills:
             skills[norm(old.get('name'))] = {'name': old.get('name'), 'status': old.get('status',''), 'meta': old.get('meta',{}), 'cardsNormal': set(old.get('cardsNormal',[])), 'cardsEvent': set(old.get('cardsEvent',[])), 'charsNormal': set(old.get('charsNormal',[])), 'charsEvent': set(old.get('charsEvent',[]))}
+    # 같은 표시명으로 여러 row가 있는 스킬이 있으므로,
+    # 같은 스킬명 source row가 여러 번 들어와도 매번 초기화하면 안 된다.
+    # 업데이트 대상이 된 스킬명은 첫 row에서 한 번만 비우고, 이후 row는 획득처를 합친다.
+    cleared_source_keys = set()
     for row in source_rows:
         skill = clean_text(row.get('스킬명'))
         if not skill: continue
-        rec = skills.setdefault(norm(skill), {'name': skill, 'status':'', 'meta':{}, 'cardsNormal': set(), 'cardsEvent': set(), 'charsNormal': set(), 'charsEvent': set()})
-        rec['status'] = row.get('상태','') or rec.get('status','')
-        # 새로 스크랩한 스킬은 획득처를 덮어쓸 수 있게 기존을 비움
-        rec['cardsNormal'], rec['cardsEvent'], rec['charsNormal'], rec['charsEvent'] = set(), set(), set(), set()
+        key = norm(skill)
+        rec = skills.setdefault(key, {'name': skill, 'status':'', 'meta':{}, 'cardsNormal': set(), 'cardsEvent': set(), 'charsNormal': set(), 'charsEvent': set()})
+
+        if key not in cleared_source_keys:
+            rec['cardsNormal'], rec['cardsEvent'], rec['charsNormal'], rec['charsEvent'] = set(), set(), set(), set()
+            rec['status'] = ''
+            cleared_source_keys.add(key)
+
+        row_status = row.get('상태','') or ''
+        if row_status == '성공':
+            rec['status'] = '성공'
+        elif not rec.get('status'):
+            rec['status'] = row_status
+
         for c in parse_cards(row.get('서포트 카드 (힌트 획득)')): rec['cardsNormal'].add(c)
         for c in parse_cards(row.get('서포트 카드 (이벤트 획득)')): rec['cardsEvent'].add(c)
         for ch in parse_list_cell(row.get('캐릭터')): rec['charsNormal'].add(ch)
@@ -183,7 +212,10 @@ def main():
     driver = make_driver()
     try:
         skill_names = scrape_skill_names(driver)
+        skill_name_counts = Counter(norm(x) for x in skill_names)
         log['skillNameCount'] = len(skill_names)
+        log['skillNameUniqueCount'] = len(skill_name_counts)
+        log['skillNameDuplicateRows'] = len(skill_names) - len(skill_name_counts)
         styles = existing.get('styles', {})
         courses = existing.get('courses') or [{'id':'default','name':'기본 마신표','baseUrl':'','styles':styles}]
         if has_real_urls():
