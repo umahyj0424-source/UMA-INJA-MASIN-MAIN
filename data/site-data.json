@@ -2,8 +2,8 @@
   "title": "6월 단거리 인자작 & 마신표 추천기",
   "sourceFile": "auto-scrape",
   "counts": {
-    "skills": 1715,
-    "cards": 425,
+    "skills": 1716,
+    "cards": 426,
     "characters": 201
   },
   "styles": {
@@ -71,6 +71,17 @@
       "cardsEvent": [],
       "charsNormal": [
         "카렌짱 (웨딩)"
+      ],
+      "charsEvent": []
+    },
+    {
+      "name": "'METI' 레조넌스",
+      "status": "성공",
+      "meta": {},
+      "cardsNormal": [],
+      "cardsEvent": [],
+      "charsNormal": [
+        "네오 유니버스 (가을)"
       ],
       "charsEvent": []
     },
@@ -2625,7 +2636,8 @@
       },
       "cardsNormal": [
         "Fuji Kiseki(SSR,스피드,30219)",
-        "Nishino Flower(SSR,스태미나,30208)"
+        "Nishino Flower(SSR,스태미나,30208)",
+        "Seeking the Pearl(SSR,스피드,30236)"
       ],
       "cardsEvent": [
         "Nishino Flower(SSR,스태미나,30208)"
@@ -3080,7 +3092,7 @@
     },
     {
       "name": "걸출",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {
         "name": "걸출",
         "category": "속도",
@@ -3089,7 +3101,9 @@
       },
       "cardsNormal": [],
       "cardsEvent": [],
-      "charsNormal": [],
+      "charsNormal": [
+        "마루젠스키 (새해)"
+      ],
       "charsEvent": []
     },
     {
@@ -3431,6 +3445,7 @@
         "Mejiro Ardan(R,지능,10069)",
         "Mejiro Ardan(SR,지능,20034)",
         "Mejiro Ardan(SSR,스피드,30119)",
+        "Mejiro Ramonu(SR,스태미나,20083)",
         "Special Week(SSR,스태미나,30127)",
         "Tamamo Cross(R,스태미나,10027)",
         "Tamamo Cross(SR,파워,20022)",
@@ -4137,6 +4152,7 @@
         "카츠라기 에이스 (오리지널)"
       ],
       "charsEvent": [
+        "마루젠스키 (새해)",
         "마야노 탑건 (오리지널)",
         "마야노 탑건 (웨딩)",
         "마야노 탑건 (할로윈)",
@@ -4822,6 +4838,7 @@
       ],
       "charsNormal": [
         "다이타쿠 헬리오스 (오리지널)",
+        "마루젠스키 (새해)",
         "마루젠스키 (오리지널)",
         "신코 윈디 (오리지널)",
         "야마닌 제퍼 (오리지널)",
@@ -5821,6 +5838,7 @@
         "Dantsu Flame(SSR,스태미나,30209)",
         "Marvelous Sunday(SSR,스피드,30131)",
         "Mejiro Ramonu(R,지능,10088)",
+        "Mejiro Ramonu(SR,스태미나,20083)",
         "Mejiro Ramonu(SSR,스태미나,30175)",
         "Mejiro Ramonu(SSR,지능,30134)",
         "Nakayama Festa(R,스태미나,10067)",
@@ -6078,7 +6096,7 @@
     },
     {
       "name": "넘쳐흐르는 투지",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {
         "name": "넘쳐흐르는 투지",
         "category": "속도",
@@ -6087,7 +6105,9 @@
       },
       "cardsNormal": [],
       "cardsEvent": [],
-      "charsNormal": [],
+      "charsNormal": [
+        "푸리오소 (오리지널)"
+      ],
       "charsEvent": []
     },
     {
@@ -6652,7 +6672,8 @@
       },
       "cardsNormal": [],
       "cardsEvent": [
-        "King Halo(SSR,스피드,30170)"
+        "King Halo(SSR,스피드,30170)",
+        "Seeking the Pearl(SSR,스피드,30236)"
       ],
       "charsNormal": [
         "킹 헤일로 (웨딩)"
@@ -6881,7 +6902,8 @@
         "Sakura Bakushin O(SSR,근성,30083)",
         "Sakura Bakushin O(SSR,스피드,30015)",
         "Seeking the Pearl(R,10061)",
-        "Seeking the Pearl(SR,20029)"
+        "Seeking the Pearl(SR,20029)",
+        "Seeking the Pearl(SSR,스피드,30236)"
       ],
       "cardsEvent": [
         "Biko Pegasus(R,스피드,10042)",
@@ -6938,7 +6960,8 @@
         "Sakura Bakushin O(SR,파워,20042)",
         "Sakura Bakushin O(SSR,근성,30083)",
         "Sakura Bakushin O(SSR,스피드,30015)",
-        "Sakura Bakushin O(SSR,스피드,30184)"
+        "Sakura Bakushin O(SSR,스피드,30184)",
+        "Seeking the Pearl(SSR,스피드,30236)"
       ],
       "cardsEvent": [
         "Ancestors & Guides(SSR,스피드,30137)",
@@ -7079,6 +7102,7 @@
         "Maruzensky(SR,지능,20062)",
         "Mejiro Ardan(SSR,스태미나,30234)",
         "Mejiro Ramonu(R,지능,10088)",
+        "Mejiro Ramonu(SR,스태미나,20083)",
         "Mejiro Ramonu(SSR,스태미나,30175)",
         "Mejiro Ramonu(SSR,지능,30134)",
         "Verxina(SSR,스피드,30205)",
@@ -7091,7 +7115,8 @@
       "charsNormal": [
         "네오 유니버스 (가을)",
         "노스 플라이트 (오리지널)",
-        "메지로 라모누 (오리지널)"
+        "메지로 라모누 (오리지널)",
+        "푸리오소 (오리지널)"
       ],
       "charsEvent": [
         "라인 크라프트 (오리지널)",
@@ -7499,6 +7524,7 @@
       ],
       "cardsEvent": [],
       "charsNormal": [
+        "푸리오소 (오리지널)",
         "홋코 타루마에 (여름 바캉스)"
       ],
       "charsEvent": []
@@ -9339,7 +9365,8 @@
         "신코 윈디 (오리지널)",
         "아그네스 디지털 (오리지널)",
         "아그네스 디지털 (할로윈)",
-        "코파노 리키 (오리지널)"
+        "코파노 리키 (오리지널)",
+        "푸리오소 (오리지널)"
       ]
     },
     {
@@ -9945,6 +9972,7 @@
       ],
       "charsNormal": [
         "다이타쿠 헬리오스 (오리지널)",
+        "마루젠스키 (새해)",
         "보드카 (오리지널)",
         "원더 어큐트 (오리지널)",
         "타이키 셔틀 (오리지널)",
@@ -10028,6 +10056,7 @@
         "다이이치 루비 (오리지널)",
         "다이타쿠 헬리오스 (무도회)",
         "다이타쿠 헬리오스 (오리지널)",
+        "마루젠스키 (새해)",
         "마치카네 탄호이저 (오리지널)",
         "마치카네 탄호이저 (운동회)",
         "시킹 더 펄 (할로윈)",
@@ -10409,7 +10438,7 @@
     },
     {
       "name": "맹렬격주",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {
         "name": "맹렬격주",
         "category": "속도",
@@ -10418,7 +10447,9 @@
       },
       "cardsNormal": [],
       "cardsEvent": [],
-      "charsNormal": [],
+      "charsNormal": [
+        "푸리오소 (오리지널)"
+      ],
       "charsEvent": []
     },
     {
@@ -10833,7 +10864,9 @@
       ],
       "cardsEvent": [],
       "charsNormal": [],
-      "charsEvent": []
+      "charsEvent": [
+        "푸리오소 (오리지널)"
+      ]
     },
     {
       "name": "모험심",
@@ -11127,6 +11160,7 @@
         "Mejiro Dober(R,지능,10046)",
         "Mejiro Dober(SR,지능,20018)",
         "Mejiro Dober(SSR,지능,30041)",
+        "Mejiro Ramonu(SR,스태미나,20083)",
         "Nakayama Festa(R,스태미나,10067)",
         "Nakayama Festa(SSR,스태미나,30043)",
         "Nakayama Festa(SSR,지능,30108)",
@@ -11436,11 +11470,13 @@
     },
     {
       "name": "바닷바람의 인도",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {},
       "cardsNormal": [],
       "cardsEvent": [],
-      "charsNormal": [],
+      "charsNormal": [
+        "푸리오소 (오리지널)"
+      ],
       "charsEvent": []
     },
     {
@@ -13231,14 +13267,16 @@
     },
     {
       "name": "빛이 비치는 곳으로",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {
         "name": "빛이 비치는 곳으로",
         "category": "속도",
         "grade": "노멀",
         "jp": "光差す方へ"
       },
-      "cardsNormal": [],
+      "cardsNormal": [
+        "Mejiro Ramonu(SR,스태미나,20083)"
+      ],
       "cardsEvent": [],
       "charsNormal": [],
       "charsEvent": []
@@ -13401,7 +13439,7 @@
     },
     {
       "name": "빼어난 한 걸음",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {
         "name": "빼어난 한 걸음",
         "category": "속도",
@@ -13410,7 +13448,9 @@
       },
       "cardsNormal": [],
       "cardsEvent": [],
-      "charsNormal": [],
+      "charsNormal": [
+        "마루젠스키 (새해)"
+      ],
       "charsEvent": []
     },
     {
@@ -13979,11 +14019,13 @@
     },
     {
       "name": "선녀의 날개옷",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {},
       "cardsNormal": [],
       "cardsEvent": [],
-      "charsNormal": [],
+      "charsNormal": [
+        "마루젠스키 (새해)"
+      ],
       "charsEvent": []
     },
     {
@@ -15332,14 +15374,16 @@
     },
     {
       "name": "순발력",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {
         "name": "순발력",
         "category": "속도",
         "grade": "노멀",
         "jp": "瞬発力"
       },
-      "cardsNormal": [],
+      "cardsNormal": [
+        "Seeking the Pearl(SSR,스피드,30236)"
+      ],
       "cardsEvent": [],
       "charsNormal": [],
       "charsEvent": []
@@ -15739,7 +15783,8 @@
         "Sakura Bakushin O(SSR,스피드,30015)",
         "Seeking the Pearl(R,10061)",
         "Seeking the Pearl(SR,20029)",
-        "Seeking the Pearl(SSR,스피드,30095)"
+        "Seeking the Pearl(SSR,스피드,30095)",
+        "Seeking the Pearl(SSR,스피드,30236)"
       ],
       "cardsEvent": [
         "Daiichi Ruby(SSR,파워,30114)",
@@ -16390,11 +16435,13 @@
     },
     {
       "name": "신내림 댄스",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {},
       "cardsNormal": [],
       "cardsEvent": [],
-      "charsNormal": [],
+      "charsNormal": [
+        "마루젠스키 (새해)"
+      ],
       "charsEvent": []
     },
     {
@@ -16640,6 +16687,7 @@
       ],
       "charsEvent": [
         "라이스 샤워 (할로윈)",
+        "마루젠스키 (새해)",
         "마루젠스키 (여름)",
         "마루젠스키 (오리지널)",
         "사토노 다이아몬드 (새해)",
@@ -18190,6 +18238,7 @@
       "cardsNormal": [],
       "cardsEvent": [],
       "charsNormal": [
+        "마루젠스키 (새해)",
         "시킹 더 펄 (오리지널)",
         "에어 그루브 (웨딩)",
         "원더 어큐트 (오리지널)",
@@ -18745,6 +18794,7 @@
       ],
       "charsNormal": [
         "니시노 플라워 (웨딩)",
+        "마루젠스키 (새해)",
         "시킹 더 펄 (오리지널)",
         "시킹 더 펄 (할로윈)",
         "신코 윈디 (오리지널)",
@@ -19333,11 +19383,13 @@
     },
     {
       "name": "용선직왕",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {},
       "cardsNormal": [],
       "cardsEvent": [],
-      "charsNormal": [],
+      "charsNormal": [
+        "푸리오소 (오리지널)"
+      ],
       "charsEvent": []
     },
     {
@@ -19584,6 +19636,7 @@
         "Seeking the Pearl(R,10061)",
         "Seeking the Pearl(SR,20029)",
         "Seeking the Pearl(SSR,스피드,30095)",
+        "Seeking the Pearl(SSR,스피드,30236)",
         "Yayoi Akikawa(R,10109)"
       ],
       "charsNormal": [
@@ -19634,7 +19687,8 @@
         "Mejiro Ramonu(SSR,지능,30134)"
       ],
       "charsNormal": [
-        "메지로 라모누 (오리지널)"
+        "메지로 라모누 (오리지널)",
+        "푸리오소 (오리지널)"
       ],
       "charsEvent": []
     },
@@ -20778,6 +20832,7 @@
       "cardsNormal": [],
       "cardsEvent": [],
       "charsNormal": [
+        "푸리오소 (오리지널)",
         "홋코 타루마에 (여름 바캉스)"
       ],
       "charsEvent": []
@@ -21535,6 +21590,7 @@
       ],
       "charsNormal": [
         "다이타쿠 헬리오스 (무도회)",
+        "마루젠스키 (새해)",
         "마루젠스키 (여름)",
         "사쿠라 치요노 오 (무도회)",
         "타이키 셔틀 (오리지널)",
@@ -21964,7 +22020,8 @@
         "Fine Motion(SSR,스피드,30214)"
       ],
       "cardsEvent": [
-        "Fine Motion(SSR,스피드,30214)"
+        "Fine Motion(SSR,스피드,30214)",
+        "Mejiro Ramonu(SR,스태미나,20083)"
       ],
       "charsNormal": [],
       "charsEvent": []
@@ -22824,6 +22881,7 @@
         "Ancestors & Guides(SSR,스피드,30137)",
         "Meisho Doto(SSR,스태미나,30079)",
         "Mejiro Ramonu(R,지능,10088)",
+        "Mejiro Ramonu(SR,스태미나,20083)",
         "Mejiro Ramonu(SSR,스태미나,30175)",
         "Mejiro Ramonu(SSR,지능,30134)",
         "The Throne's Assemblage(SSR,스피드,30067)",
@@ -26000,6 +26058,7 @@
         "사쿠라 바쿠신 오 (오리지널)"
       ],
       "charsEvent": [
+        "마루젠스키 (새해)",
         "마루젠스키 (여름)",
         "마루젠스키 (오리지널)"
       ]
@@ -26190,14 +26249,16 @@
     },
     {
       "name": "터닝 포인트",
-      "status": "실패: RuntimeError: 더 보기 클릭 실패: no target",
+      "status": "성공",
       "meta": {
         "name": "터닝 포인트",
         "category": "가속",
         "grade": "노멀",
         "jp": "ターニングポイント"
       },
-      "cardsNormal": [],
+      "cardsNormal": [
+        "Seeking the Pearl(SSR,스피드,30236)"
+      ],
       "cardsEvent": [],
       "charsNormal": [],
       "charsEvent": []
@@ -26532,6 +26593,7 @@
         "Cesario(SSR,스피드,30217)",
         "Dantsu Flame(R,지능,10108)",
         "Dantsu Flame(SR,지능,20077)",
+        "Mejiro Ramonu(SR,스태미나,20083)",
         "Mejiro Ryan(SSR,파워,30176)",
         "No Reason(R,파워,10117)",
         "No Reason(SSR,파워,30200)",
@@ -26747,7 +26809,9 @@
       "charsNormal": [
         "트랜센드 (오리지널)"
       ],
-      "charsEvent": []
+      "charsEvent": [
+        "푸리오소 (오리지널)"
+      ]
     },
     {
       "name": "파죽근육",
@@ -26941,6 +27005,7 @@
         "Marvelous Sunday(SSR,스피드,30089)",
         "Mayano Top Gun(SSR,파워,30151)",
         "Mejiro Dober(SSR,스피드,30174)",
+        "Mejiro Ramonu(SR,스태미나,20083)",
         "Nakayama Festa(SSR,지능,30163)",
         "North Flight(SR,파워,20081)",
         "Sounds of Earth(SSR,스태미나,30191)",
@@ -28002,7 +28067,9 @@
         "King Halo(SSR,스피드,30170)",
         "Sakura Bakushin O(SSR,스피드,30184)"
       ],
-      "cardsEvent": [],
+      "cardsEvent": [
+        "Seeking the Pearl(SSR,스피드,30236)"
+      ],
       "charsNormal": [
         "킹 헤일로 (웨딩)"
       ],
@@ -28061,6 +28128,7 @@
         "Biko Pegasus(SSR,파워,30132)",
         "Gold City(SSR,스피드,30153)",
         "Mejiro Dober(SSR,스피드,30174)",
+        "Seeking the Pearl(SSR,스피드,30236)",
         "Vodka(SSR,스피드,30202)"
       ],
       "cardsEvent": [
@@ -28654,12 +28722,14 @@
       "charsEvent": []
     },
     {
-      "name": "홍염기어/LP1211-M",
-      "status": "실패: TimeoutException: Message:",
+      "name": "홍염 기어/LP1211-M",
+      "status": "성공",
       "meta": {},
       "cardsNormal": [],
       "cardsEvent": [],
-      "charsNormal": [],
+      "charsNormal": [
+        "마루젠스키 (오리지널)"
+      ],
       "charsEvent": []
     },
     {
@@ -29382,6 +29452,7 @@
     "#반해라♪",
     "#뷰티_스프린트",
     "#카렌으로_물들어_볼래?",
+    "'METI' 레조넌스",
     "...found you.",
     "...경외하라, 그리고 꿇어라",
     "...물러나세요",
@@ -31047,7 +31118,7 @@
     "혼신의 발걸음",
     "홉 스텝・겟츄♡",
     "홍련의 오버 레브",
-    "홍염기어/LP1211-M",
+    "홍염 기어/LP1211-M",
     "화려하여라",
     "화려한 발걸음",
     "화려한 서빙",
@@ -34439,9 +34510,20 @@
       "rarity": "SSR",
       "type": "스피드",
       "code": "30236",
-      "normalSkills": [],
+      "normalSkills": [
+        "가슴의 고동",
+        "단거리 직선○",
+        "단거리 코너○",
+        "순발력",
+        "스프린트 기어",
+        "터닝 포인트",
+        "한달음"
+      ],
       "eventSkills": [
-        "직선 코스○"
+        "늠름한 기개",
+        "우마무스메 애호가",
+        "직선 코스○",
+        "한결같이 전진"
       ]
     },
     {
@@ -36808,6 +36890,26 @@
       "eventSkills": [
         "진창길○",
         "텐션 상승"
+      ]
+    },
+    {
+      "name": "Mejiro Ramonu(SR,스태미나,20083)",
+      "display": "Mejiro Ramonu",
+      "rarity": "SR",
+      "type": "스태미나",
+      "code": "20083",
+      "normalSkills": [
+        "경쾌한 스텝",
+        "남김 없이",
+        "단아한 발걸음",
+        "물고 늘어지기",
+        "빛이 비치는 곳으로",
+        "투쟁심",
+        "페이스 업"
+      ],
+      "eventSkills": [
+        "정면 돌파",
+        "중거리 코너○"
       ]
     },
     {
@@ -40015,6 +40117,7 @@
     {
       "name": "네오 유니버스 (가을)",
       "normalSkills": [
+        "'METI' 레조넌스",
         "Encounter with U",
         "근간거리○",
         "단아한 발걸음",
@@ -40415,9 +40518,23 @@
     {
       "name": "마루젠스키 (새해)",
       "normalSkills": [
-        "영험작연 따봉 신탁"
+        "걸출",
+        "기어 시프트",
+        "마일 직선○",
+        "빼어난 한 걸음",
+        "선녀의 날개옷",
+        "신내림 댄스",
+        "여장부 기질",
+        "영험작연 따봉 신탁",
+        "오기",
+        "적극책"
       ],
-      "eventSkills": []
+      "eventSkills": [
+        "굳히기 준비",
+        "마일 코너○",
+        "심호흡",
+        "큰 리드"
+      ]
     },
     {
       "name": "마루젠스키 (여름)",
@@ -40450,7 +40567,8 @@
         "액셀러레이션",
         "직선 달인",
         "집중력",
-        "홍련의 오버 레브"
+        "홍련의 오버 레브",
+        "홍염 기어/LP1211-M"
       ],
       "eventSkills": [
         "심호흡",
@@ -43713,9 +43831,21 @@
       "name": "푸리오소 (오리지널)",
       "normalSkills": [
         "『후나바시 최강!』",
-        "교류 대상경주○"
+        "교류 대상경주○",
+        "넘쳐흐르는 투지",
+        "단아한 발걸음",
+        "더트 직선○",
+        "맹렬격주",
+        "바닷바람의 인도",
+        "용선직왕",
+        "우위형성",
+        "있는 힘껏"
       ],
-      "eventSkills": []
+      "eventSkills": [
+        "레커멘드",
+        "모순된 마음",
+        "파이오니어"
+      ]
     },
     {
       "name": "하루 우라라 (새해)",
@@ -43932,11 +44062,13 @@
       ]
     }
   ],
-  "updatedAt": "2026-05-12T10:41:02.960132+00:00",
+  "updatedAt": "2026-05-12T12:16:11.196415+00:00",
   "updateLog": {
-    "startedAt": "2026-05-12T10:33:40.282037+00:00",
+    "startedAt": "2026-05-12T10:51:34.012233+00:00",
     "mode": "auto",
-    "skillNameCount": 50,
+    "skillNameCount": 1438,
+    "skillNameUniqueCount": 1432,
+    "skillNameDuplicateRows": 6,
     "mashin": [
       {
         "courseId": "10501",
@@ -44023,7 +44155,7 @@
         "rows": 0
       }
     ],
-    "sourceRows": 50
+    "sourceRows": 1438
   },
   "courses": [
     {

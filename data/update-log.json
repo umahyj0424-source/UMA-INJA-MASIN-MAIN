@@ -1,7 +1,9 @@
 {
-  "startedAt": "2026-05-12T10:33:40.282037+00:00",
+  "startedAt": "2026-05-12T10:51:34.012233+00:00",
   "mode": "auto",
-  "skillNameCount": 50,
+  "skillNameCount": 1438,
+  "skillNameUniqueCount": 1432,
+  "skillNameDuplicateRows": 6,
   "mashin": [
     {
       "courseId": "10501",
@@ -88,5 +90,5 @@
       "rows": 0
     }
   ],
-  "sourceRows": 50
+  "sourceRows": 1438
 }
