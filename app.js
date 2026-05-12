@@ -1,357 +1,471 @@
-let DATA = null;
-async function boot(){
-  DATA = await fetch('data/site-data.json', {cache:'no-cache'}).then(r => r.json());
-const $ = (sel) => document.querySelector(sel);
-    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-    const norm = (s) => String(s ?? '').trim().replace(/\s+/g, '').replace(/[◯〇]/g, '○').toLowerCase();
-    const uniq = (arr) => Array.from(new Set(arr));
-    const byNorm = new Map(DATA.skillNames.map(s => [norm(s), s]));
-    const skillByNorm = new Map(DATA.skills.map(s => [norm(s.name), s]));
-    const courses = Array.isArray(DATA.courses) && DATA.courses.length
-      ? DATA.courses
-      : [{id: 'default', name: '기본 마신표', baseUrl: '', styles: DATA.styles || {}}];
-    let activeCourseId = localStorage.getItem('umaSkillSiteCourse') || String(courses[0].id);
-    if (!courses.some(c => String(c.id) === String(activeCourseId))) activeCourseId = String(courses[0].id);
-    let statsMap = {};
+const STORAGE_KEY = 'uma_editable_site_data_v1';
+const SELECTED_KEY = 'uma_selected_skills_v1';
+const OWNED_KEY = 'uma_owned_state_v1';
+const STYLE_NAMES = ['도주', '선행', '선입', '추입'];
 
-    function currentCourse() {
-      return courses.find(c => String(c.id) === String(activeCourseId)) || courses[0];
-    }
-    function currentStyles() {
-      return currentCourse()?.styles || DATA.styles || {};
-    }
-    function rebuildStatsMap() {
-      statsMap = {};
-      for (const [style, rows] of Object.entries(currentStyles())) {
-        statsMap[style] = new Map((rows || []).map(r => [norm(r.skill), r]));
-      }
-    }
-    function populateCourseSelects() {
-      const html = courses.map(c => `<option value="${escapeHtml(String(c.id))}">${escapeHtml(c.name || ('코스 ' + c.id))}</option>`).join('');
-      ['courseSelect','statsCourse'].forEach(id => {
-        const el = $('#'+id);
-        if (!el) return;
-        el.innerHTML = html;
-        el.value = activeCourseId;
-      });
-    }
-    function setActiveCourse(id) {
-      activeCourseId = String(id || courses[0].id);
-      localStorage.setItem('umaSkillSiteCourse', activeCourseId);
-      ['courseSelect','statsCourse'].forEach(sel => { const el = $('#'+sel); if (el) el.value = activeCourseId; });
-      rebuildStatsMap();
-      renderAll();
-      renderStatsTable();
-      renderSkillDb();
-    }
-    rebuildStatsMap();
+let defaultData = null;
+let data = null;
+let selectedSkills = [];
+let ownedState = { cards: {}, characters: {} };
+let activeTab = 'recommend';
 
-    let selected = [];
-    let owned = loadOwned();
+const $ = (id) => document.getElementById(id);
+const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
+const safe = (v) => (v ?? '').toString();
+const trim = (v) => safe(v).trim();
+const uniq = (arr) => [...new Set((arr || []).map(trim).filter(Boolean))];
+const splitList = (s) => uniq(safe(s).split(',').map(x => x.trim()).filter(Boolean));
+const joinList = (arr) => uniq(arr).join(', ');
+const escapeHtml = (s) => safe(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const parseMaybeNumber = (v) => {
+  const s = trim(v);
+  if (!s) return '';
+  const n = Number(s.replace(/,/g, ''));
+  return Number.isFinite(n) ? n : s;
+};
+const formatRate = (v) => {
+  if (v === '' || v == null) return '-';
+  if (typeof v === 'number') {
+    if (v <= 1) return `${Math.round(v * 1000) / 10}%`;
+    return `${v}`;
+  }
+  return safe(v);
+};
+const formatNum = (v) => {
+  if (v === '' || v == null) return '-';
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(Math.round(v * 1000) / 1000);
+  const n = Number(v);
+  if (Number.isFinite(n)) return Number.isInteger(n) ? String(n) : String(Math.round(n * 1000) / 1000);
+  return safe(v);
+};
+const toast = (msg) => {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1800);
+};
 
-    function loadOwned() {
-      try {
-        return JSON.parse(localStorage.getItem('umaSkillSiteOwned') || '{"cards":[],"characters":[]}');
-      } catch {
-        return {cards:[], characters:[]};
-      }
-    }
-    function saveOwned() { localStorage.setItem('umaSkillSiteOwned', JSON.stringify(owned)); }
-    function isOwned(kind, name) { return (owned[kind] || []).includes(name); }
-    function toggleOwned(kind, name) {
-      owned[kind] = owned[kind] || [];
-      if (owned[kind].includes(name)) owned[kind] = owned[kind].filter(x => x !== name);
-      else owned[kind].push(name);
-      saveOwned(); renderAll(); renderOwnedList();
-    }
-    function fmtNum(v) {
-      if (v === null || v === undefined || v === '') return '-';
-      if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
-      return String(v);
-    }
-    function fmtPct(v) {
-      if (v === null || v === undefined || v === '') return '-';
-      if (typeof v === 'number') return (v * 100).toFixed(v === 1 ? 0 : 1).replace(/\.0$/,'') + '%';
-      return String(v);
-    }
-    function highlight(text, q) {
-      text = String(text ?? '');
-      q = String(q ?? '').trim();
-      if (!q) return escapeHtml(text);
-      const i = norm(text).indexOf(norm(q));
-      if (i < 0) return escapeHtml(text);
-      // Korean normalization removes spaces, so exact visual index is hard. Use safe fallback.
-      return escapeHtml(text).replace(new RegExp(escapeReg(q), 'gi'), m => `<mark>${m}</mark>`);
-    }
-    function escapeHtml(s) { return String(s ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
-    function escapeReg(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-
-    function canonicalSkill(q) {
-      const n = norm(q);
-      if (!n) return null;
-      if (byNorm.has(n)) return byNorm.get(n);
-      const exactSkill = DATA.skillNames.find(s => norm(s) === n);
-      if (exactSkill) return exactSkill;
-      return DATA.skillNames.find(s => norm(s).includes(n)) || null;
-    }
-    function addSkill(q) {
-      const skill = canonicalSkill(q || $('#skillInput').value);
-      if (!skill) return;
-      if (!selected.some(s => norm(s) === norm(skill))) selected.push(skill);
-      $('#skillInput').value = '';
-      renderSuggestions('');
-      renderAll();
-    }
-    function removeSkill(skill) { selected = selected.filter(s => norm(s) !== norm(skill)); renderAll(); }
-
-    function renderSuggestions(q) {
-      const box = $('#skillSuggestions');
-      const nq = norm(q);
-      if (!nq) { box.innerHTML = ''; return; }
-      const hits = DATA.skillNames
-        .filter(s => norm(s).includes(nq))
-        .slice(0, 12);
-      box.innerHTML = hits.map(s => `<button class="suggestion" data-add="${escapeHtml(s)}">${highlight(s, q)}</button>`).join('') || '<div class="empty">검색 결과 없음</div>';
-    }
-
-    function statOf(style, skill) { return statsMap[style]?.get(norm(skill)); }
-    function gainOf(style, skill) {
-      const st = statOf(style, skill);
-      return typeof st?.gain === 'number' ? st.gain : 0;
-    }
-
-    function renderSelected() {
-      const chips = $('#selectedChips');
-      chips.innerHTML = selected.length
-        ? selected.map(s => `<span class="chip">${escapeHtml(s)} <button title="삭제" data-remove="${escapeHtml(s)}">×</button></span>`).join('')
-        : '<span class="hint">아직 선택된 스킬 없음</span>';
-    }
-
-    function renderSelectedStats() {
-      const style = $('#styleSelect').value;
-      const rows = selected.map(skill => {
-        const st = statOf(style, skill);
-        const sk = skillByNorm.get(norm(skill));
-        const sourceCount = (sk?.cardsNormal?.length || 0) + (sk?.cardsEvent?.length || 0) + (sk?.charsNormal?.length || 0) + (sk?.charsEvent?.length || 0);
-        return {skill, st, sourceCount};
-      });
-      const totalGain = rows.reduce((a,r)=>a+(typeof r.st?.gain === 'number' ? r.st.gain : 0),0);
-      const matchedStats = rows.filter(r => r.st).length;
-      $('#summaryStats').innerHTML = `
-        <div class="stat"><strong>${selected.length}</strong><span>선택 스킬</span></div>
-        <div class="stat"><strong>${fmtNum(totalGain)}</strong><span>${style} 기준 마신합</span></div>
-        <div class="stat"><strong>${matchedStats}</strong><span>마신표 매칭</span></div>`;
-      if (!selected.length) {
-        $('#selectedStats').innerHTML = '<div class="empty">스킬을 추가하면 여기서 각질별 마신이득을 바로 확인할 수 있음.</div>';
-        return;
-      }
-      $('#selectedStats').innerHTML = `<div class="table-wrap"><table>
-        <thead><tr><th>스킬</th><th>마신이득</th><th>마신/Pt</th><th>발동률</th><th>유효율</th><th>획득처 수</th></tr></thead>
-        <tbody>${rows.map(r => `<tr>
-          <td><b>${escapeHtml(r.skill)}</b></td>
-          <td>${fmtNum(r.st?.gain)}</td>
-          <td>${fmtNum(r.st?.gainPerPt)}</td>
-          <td>${fmtPct(r.st?.procRate)}</td>
-          <td>${fmtPct(r.st?.effectiveRate)}</td>
-          <td>${r.sourceCount}</td>
-        </tr>`).join('')}</tbody></table></div>`;
-    }
-
-    function scoreEntity(entity, style) {
-      const normalSet = new Set(entity.normalSkills.map(norm));
-      const eventSet = new Set(entity.eventSkills.map(norm));
-      const normalMatches = [];
-      const eventMatches = [];
-      const matched = [];
-      for (const s of selected) {
-        const n = norm(s);
-        const inNormal = normalSet.has(n);
-        const inEvent = eventSet.has(n);
-        if (inNormal) normalMatches.push(s);
-        if (inEvent) eventMatches.push(s);
-        if (inNormal || inEvent) matched.push(s);
-      }
-      const missing = selected.filter(s => !matched.some(m => norm(m) === norm(s)));
-      const score = uniq(matched.map(norm)).reduce((acc, n) => acc + gainOf(style, byNorm.get(n) || n), 0);
-      return {normalMatches, eventMatches, matched: uniq(matched), missing, count: uniq(matched.map(norm)).length, score};
-    }
-    function sortResults(a, b) {
-      const mode = $('#sortSelect').value;
-      if (mode === 'count') return (b.match.count - a.match.count) || (b.match.score - a.match.score) || a.name.localeCompare(b.name, 'ko');
-      if (mode === 'name') return a.name.localeCompare(b.name, 'ko');
-      return (b.match.score - a.match.score) || (b.match.count - a.match.count) || a.name.localeCompare(b.name, 'ko');
-    }
-
-    function resultCard(item, match, kind, rank) {
-      const ownedKey = kind === 'cards' ? 'cards' : 'characters';
-      const ownedOn = isOwned(ownedKey, item.name);
-      const sub = kind === 'cards'
-        ? `${item.rarity || ''}${item.type ? ' · ' + item.type : ''}${item.code ? ' · ' + item.code : ''}`
-        : '캐릭터';
-      const totalSkills = (item.normalSkills?.length || 0) + (item.eventSkills?.length || 0);
-      return `<article class="result-card">
-        <div class="result-head">
-          <div>
-            <div class="title-line">${rank}. ${escapeHtml(kind === 'cards' ? item.display || item.name : item.name)}</div>
-            <div class="meta">${escapeHtml(sub)} · 전체 스킬 ${totalSkills}개</div>
-          </div>
-          <button class="star ${ownedOn ? 'on' : ''}" title="보유 토글" data-own-kind="${ownedKey}" data-own-name="${escapeHtml(item.name)}">★</button>
-        </div>
-        <div class="badges">
-          <span class="badge score">매칭 ${match.count}/${selected.length}</span>
-          <span class="badge score">마신합 ${fmtNum(match.score)}</span>
-          ${match.normalMatches.map(s => `<span class="badge normal">일반: ${escapeHtml(s)}</span>`).join('')}
-          ${match.eventMatches.map(s => `<span class="badge event">이벤트: ${escapeHtml(s)}</span>`).join('')}
-          ${match.missing.length ? `<span class="badge miss">부족 ${match.missing.length}개</span>` : ''}
-        </div>
-        <details>
-          <summary>전체 스킬 보기</summary>
-          <div class="badges">
-            ${item.normalSkills.map(s => `<span class="badge normal">${escapeHtml(s)}</span>`).join('')}
-            ${item.eventSkills.map(s => `<span class="badge event">${escapeHtml(s)}</span>`).join('')}
-          </div>
-        </details>
-      </article>`;
-    }
-
-    function renderRecommendations() {
-      if (!selected.length) {
-        $('#cardResults').innerHTML = '<div class="empty">희망 스킬을 먼저 추가해줘.</div>';
-        $('#charResults').innerHTML = '<div class="empty">희망 스킬을 먼저 추가해줘.</div>';
-        return;
-      }
-      const style = $('#styleSelect').value;
-      const ownedOnly = $('#ownedOnly').checked;
-      const cardResults = DATA.cards.map(c => ({...c, match: scoreEntity(c, style)}))
-        .filter(x => x.match.count > 0)
-        .filter(x => !ownedOnly || isOwned('cards', x.name))
-        .sort(sortResults)
-        .slice(0, 30);
-      const charResults = DATA.characters.map(c => ({...c, match: scoreEntity(c, style)}))
-        .filter(x => x.match.count > 0)
-        .filter(x => !ownedOnly || isOwned('characters', x.name))
-        .sort(sortResults)
-        .slice(0, 30);
-      $('#cardResults').innerHTML = cardResults.length ? cardResults.map((x,i)=>resultCard(x,x.match,'cards',i+1)).join('') : '<div class="empty">조건에 맞는 서포트카드 없음</div>';
-      $('#charResults').innerHTML = charResults.length ? charResults.map((x,i)=>resultCard(x,x.match,'characters',i+1)).join('') : '<div class="empty">조건에 맞는 캐릭터 없음</div>';
-    }
-
-    function renderStatsTable() {
-      const style = $('#statsStyle').value;
-      const q = norm($('#statsSearch').value);
-      const sort = $('#statsSort').value;
-      let rows = [...(currentStyles()[style] || [])];
-      if (q) rows = rows.filter(r => norm(r.skill).includes(q));
-      rows.sort((a,b) => sort === 'name' ? a.skill.localeCompare(b.skill, 'ko') : sort === 'pt' ? ((b.gainPerPt || 0) - (a.gainPerPt || 0)) : ((b.gain || 0) - (a.gain || 0)));
-      rows = rows.slice(0, 250);
-      $('#statsTable').innerHTML = `<div class="table-wrap"><table>
-        <thead><tr><th>추가</th><th>스킬명</th><th>마신이득</th><th>마신/Pt</th><th>발동률</th><th>유효율</th></tr></thead>
-        <tbody>${rows.map(r => `<tr>
-          <td><button class="btn small secondary" data-add="${escapeHtml(r.skill)}">+</button></td>
-          <td><b>${highlight(r.skill, $('#statsSearch').value)}</b></td>
-          <td>${fmtNum(r.gain)}</td><td>${fmtNum(r.gainPerPt)}</td><td>${fmtPct(r.procRate)}</td><td>${fmtPct(r.effectiveRate)}</td>
-        </tr>`).join('')}</tbody></table></div>`;
-    }
-
-    function renderSkillDb() {
-      const qRaw = $('#dbSearch').value;
-      const q = norm(qRaw);
-      const filter = $('#dbFilter').value;
-      const allStatsNorm = new Set(Object.values(statsMap).flatMap(m => Array.from(m.keys())));
-      let rows = DATA.skills.filter(s => {
-        const meta = s.meta || {};
-        const hasSource = (s.cardsNormal.length + s.cardsEvent.length + s.charsNormal.length + s.charsEvent.length) > 0;
-        const hasStats = allStatsNorm.has(norm(s.name));
-        if (filter === 'source' && !hasSource) return false;
-        if (filter === 'stats' && !hasStats) return false;
-        if (!q) return true;
-        return [s.name, meta.jp, meta.category, meta.grade, meta.owner].some(x => norm(x).includes(q));
-      }).slice(0, 80);
-      $('#skillDbResults').innerHTML = rows.length ? rows.map(s => {
-        const meta = s.meta || {};
-        const sourceCount = s.cardsNormal.length + s.cardsEvent.length + s.charsNormal.length + s.charsEvent.length;
-        const statBadges = Object.keys(statsMap).filter(style => statsMap[style].has(norm(s.name))).map(style => `<span class="badge score">${style} ${fmtNum(statsMap[style].get(norm(s.name)).gain)}</span>`).join('');
-        return `<article class="result-card">
-          <div class="result-head">
-            <div><div class="title-line">${highlight(s.name, qRaw)}</div>
-            <div class="meta">${escapeHtml([meta.category, meta.grade, meta.jp, meta.owner].filter(Boolean).join(' · ') || '분류 정보 없음')} · 획득처 ${sourceCount}개</div></div>
-            <button class="btn small secondary" data-add="${escapeHtml(s.name)}">추천기에 추가</button>
-          </div>
-          <div class="badges">${statBadges || '<span class="badge">마신표 없음</span>'}</div>
-          <details open><summary>획득처</summary>
-            <div class="badges">
-              ${s.cardsNormal.map(x => `<span class="badge normal">카드 일반: ${escapeHtml(x)}</span>`).join('')}
-              ${s.cardsEvent.map(x => `<span class="badge event">카드 이벤트: ${escapeHtml(x)}</span>`).join('')}
-              ${s.charsNormal.map(x => `<span class="badge normal">캐릭터 일반: ${escapeHtml(x)}</span>`).join('')}
-              ${s.charsEvent.map(x => `<span class="badge event">캐릭터 이벤트: ${escapeHtml(x)}</span>`).join('')}
-              ${sourceCount ? '' : '<span class="badge miss">획득처 데이터 없음</span>'}
-            </div>
-          </details>
-        </article>`;
-      }).join('') : '<div class="empty">검색 결과 없음</div>';
-    }
-
-    function renderOwnedList() {
-      const q = norm($('#ownedSearch')?.value || '');
-      const cards = DATA.cards.filter(c => !q || norm(c.name).includes(q) || norm(c.display).includes(q)).slice(0, 120);
-      const chars = DATA.characters.filter(c => !q || norm(c.name).includes(q)).slice(0, 120);
-      $('#ownedList').innerHTML = `
-        <h3>서포트카드</h3>
-        ${cards.map(c => `<article class="result-card"><div class="result-head"><div><div class="title-line">${escapeHtml(c.display || c.name)}</div><div class="meta">${escapeHtml([c.rarity,c.type,c.code].filter(Boolean).join(' · '))}</div></div><button class="star ${isOwned('cards', c.name) ? 'on' : ''}" data-own-kind="cards" data-own-name="${escapeHtml(c.name)}">★</button></div></article>`).join('')}
-        <h3>캐릭터</h3>
-        ${chars.map(c => `<article class="result-card"><div class="result-head"><div><div class="title-line">${escapeHtml(c.name)}</div><div class="meta">스킬 ${c.normalSkills.length + c.eventSkills.length}개</div></div><button class="star ${isOwned('characters', c.name) ? 'on' : ''}" data-own-kind="characters" data-own-name="${escapeHtml(c.name)}">★</button></div></article>`).join('')}`;
-    }
-
-    function renderAll() {
-      renderSelected();
-      renderSelectedStats();
-      renderRecommendations();
-      const courseLabel = currentCourse()?.name || '기본 마신표';
-      $('#dataCounts').textContent = `코스 ${courseLabel} · 스킬 ${DATA.counts.skills.toLocaleString()} · 카드 ${DATA.counts.cards.toLocaleString()} · 캐릭터 ${DATA.counts.characters.toLocaleString()}`;
-    }
-
-    document.addEventListener('click', e => {
-      const tab = e.target.closest('[data-tab]');
-      if (tab) {
-        $$('.tab').forEach(t=>t.classList.toggle('active', t === tab));
-        $$('.section').forEach(s=>s.classList.toggle('active', s.id === tab.dataset.tab));
-        if (tab.dataset.tab === 'stats') renderStatsTable();
-        if (tab.dataset.tab === 'skilldb') renderSkillDb();
-        if (tab.dataset.tab === 'owned') renderOwnedList();
-      }
-      const add = e.target.closest('[data-add]');
-      if (add) addSkill(add.dataset.add);
-      const rem = e.target.closest('[data-remove]');
-      if (rem) removeSkill(rem.dataset.remove);
-      const own = e.target.closest('[data-own-kind]');
-      if (own) toggleOwned(own.dataset.ownKind, own.dataset.ownName);
-    });
-    $('#addSkillBtn').addEventListener('click', () => addSkill());
-    $('#skillInput').addEventListener('input', e => renderSuggestions(e.target.value));
-    $('#skillInput').addEventListener('keydown', e => { if (e.key === 'Enter') addSkill(); });
-    $('#clearSelectedBtn').addEventListener('click', () => { selected = []; renderAll(); });
-    $('#sampleBtn').addEventListener('click', () => { selected = ['터다지기', '전광석화', '스프린트 터보', '꽃봉오리, 피어날 때']; renderAll(); });
-    populateCourseSelects();
-    ['courseSelect','statsCourse'].forEach(id => {
-      const el = $('#'+id);
-      if (el) el.addEventListener('change', e => setActiveCourse(e.target.value));
-    });
-    ['styleSelect','sortSelect','ownedOnly'].forEach(id => $('#'+id).addEventListener('change', renderAll));
-    $('#statsStyle').addEventListener('change', renderStatsTable);
-    $('#statsSearch').addEventListener('input', renderStatsTable);
-    $('#statsSort').addEventListener('change', renderStatsTable);
-    $('#dbSearch').addEventListener('input', renderSkillDb);
-    $('#dbFilter').addEventListener('change', renderSkillDb);
-    $('#ownedSearch').addEventListener('input', renderOwnedList);
-    $('#clearOwnedBtn').addEventListener('click', () => { owned = {cards:[], characters:[]}; saveOwned(); renderAll(); renderOwnedList(); });
-    $('#exportOwnedBtn').addEventListener('click', async () => {
-      await navigator.clipboard.writeText(JSON.stringify(owned, null, 2));
-      $('#exportOwnedBtn').textContent = '복사 완료';
-      setTimeout(()=>$('#exportOwnedBtn').textContent='보유 JSON 복사', 900);
-    });
-    renderAll();
+async function init() {
+  try {
+    const res = await fetch('data/site-data.json?v=' + Date.now());
+    defaultData = await res.json();
+  } catch (e) {
+    defaultData = { title: 'UMA 추천기', courses: [], skillNames: [], skills: [], cards: [], characters: [] };
+    toast('기본 data/site-data.json을 불러오지 못했습니다.');
+  }
+  const saved = localStorage.getItem(STORAGE_KEY);
+  data = saved ? JSON.parse(saved) : deepClone(defaultData);
+  selectedSkills = JSON.parse(localStorage.getItem(SELECTED_KEY) || '[]');
+  ownedState = JSON.parse(localStorage.getItem(OWNED_KEY) || '{"cards":{},"characters":{}}');
+  hydrateOwnedFromState();
+  bindEvents();
+  renderAll();
 }
-boot().catch(err => {
-  console.error(err);
-  document.body.innerHTML = '<main class="wrap"><section class="panel"><h1>데이터 로딩 실패</h1><p>data/site-data.json 파일을 확인해줘.</p></section></main>';
-});
+
+function hydrateOwnedFromState() {
+  (data.cards || []).forEach(c => c.owned = !!ownedState.cards[c.name]);
+  (data.characters || []).forEach(c => c.owned = !!ownedState.characters[c.name]);
+}
+function persistOwned() {
+  ownedState = { cards: {}, characters: {} };
+  (data.cards || []).forEach(c => { if (c.owned) ownedState.cards[c.name] = true; });
+  (data.characters || []).forEach(c => { if (c.owned) ownedState.characters[c.name] = true; });
+  localStorage.setItem(OWNED_KEY, JSON.stringify(ownedState));
+}
+function saveLocal() {
+  hydrateOwnedFromState();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  localStorage.setItem(SELECTED_KEY, JSON.stringify(selectedSkills));
+  persistOwned();
+  toast('브라우저에 저장했습니다.');
+}
+function getActiveCourse() {
+  const id = $('recCourse')?.value || data.activeCourseId || data.courses?.[0]?.id;
+  return (data.courses || []).find(c => c.id === id) || data.courses?.[0];
+}
+function getCourseById(id) {
+  return (data.courses || []).find(c => c.id === id);
+}
+function updateCounts() {
+  const mashinRows = (data.courses || []).reduce((acc, c) => acc + STYLE_NAMES.reduce((s, st) => s + ((c.styles?.[st] || []).length), 0), 0);
+  const counts = {
+    courses: data.courses?.length || 0,
+    skillNames: data.skillNames?.length || 0,
+    skills: data.skills?.length || 0,
+    cards: data.cards?.length || 0,
+    characters: data.characters?.length || 0,
+    mashinRows,
+  };
+  $('summaryCounts').textContent = `코스 ${counts.courses} · 스킬목록 ${counts.skillNames} · 스킬DB ${counts.skills} · 카드 ${counts.cards} · 캐릭터 ${counts.characters} · 마신표 ${counts.mashinRows}`;
+  const summary = {
+    title: data.title,
+    version: data.version,
+    updatedAt: new Date().toLocaleString('ko-KR'),
+    counts,
+    courses: (data.courses || []).map(c => ({ id: c.id, name: c.name, rows: Object.fromEntries(STYLE_NAMES.map(st => [st, c.styles?.[st]?.length || 0])) }))
+  };
+  if ($('dataSummary')) $('dataSummary').textContent = JSON.stringify(summary, null, 2);
+}
+function renderCourseSelects() {
+  const options = (data.courses || []).map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name || c.id)}</option>`).join('');
+  ['recCourse','mashinCourse'].forEach(id => { if ($(id)) $(id).innerHTML = options; });
+  const active = data.activeCourseId || data.courses?.[0]?.id || '';
+  if ($('recCourse')) $('recCourse').value = active;
+  if ($('mashinCourse')) $('mashinCourse').value = active;
+  const c = getCourseById(active) || data.courses?.[0];
+  if ($('mashinCourseName')) $('mashinCourseName').value = c?.name || '';
+}
+function renderDatalist() {
+  const list = $('skillDatalist');
+  if (!list) return;
+  list.innerHTML = (data.skillNames || []).slice(0, 5000).map(s => `<option value="${escapeHtml(s)}"></option>`).join('');
+}
+function renderSelectedChips() {
+  $('selectedSkills').innerHTML = selectedSkills.map(s => `<span class="chip">${escapeHtml(s)} <button data-remove-skill="${escapeHtml(s)}">×</button></span>`).join('') || '<span class="hint">선택된 스킬이 없습니다.</span>';
+}
+function findMashinRow(skill, course, style) {
+  const rows = course?.styles?.[style] || [];
+  return rows.find(r => r.skill === skill);
+}
+function renderSelectedMashin() {
+  const course = getActiveCourse();
+  const style = $('recStyle').value;
+  let total = 0, matches = 0;
+  const rows = selectedSkills.map(skill => {
+    const m = findMashinRow(skill, course, style);
+    if (m) { matches++; total += Number(m.gain) || 0; }
+    return { skill, ...m };
+  });
+  $('kpiSelected').textContent = selectedSkills.length;
+  $('kpiMashin').textContent = formatNum(total);
+  $('kpiMatches').textContent = matches;
+  $('selectedMashinTable').innerHTML = `<thead><tr><th>스킬명</th><th>마신이득</th><th>마신/Pt</th><th>발동률</th><th>유효율</th></tr></thead><tbody>` +
+    rows.map(r => `<tr><td>${escapeHtml(r.skill)}</td><td class="num">${formatNum(r.gain)}</td><td class="num">${formatNum(r.gainPerPt)}</td><td class="num">${formatRate(r.procRate)}</td><td class="num">${formatRate(r.effectiveRate)}</td></tr>`).join('') +
+    `</tbody>`;
+}
+function scoreItem(item, type) {
+  const course = getActiveCourse();
+  const style = $('recStyle').value;
+  const normal = item.normalSkills || [];
+  const event = item.eventSkills || [];
+  const all = new Set([...normal, ...event]);
+  const matched = selectedSkills.filter(s => all.has(s));
+  const missing = selectedSkills.filter(s => !all.has(s));
+  const mashin = matched.reduce((sum, s) => sum + (Number(findMashinRow(s, course, style)?.gain) || 0), 0);
+  return { item, type, matched, missing, mashin, matchCount: matched.length };
+}
+function renderRecommendations() {
+  const ownedOnly = $('recOwned').value === 'owned';
+  const sortMode = $('recSort').value;
+  const sorter = (a,b) => {
+    if (sortMode === 'mashin') return b.mashin - a.mashin || b.matchCount - a.matchCount || a.missing.length - b.missing.length;
+    if (sortMode === 'missing') return a.missing.length - b.missing.length || b.matchCount - a.matchCount || b.mashin - a.mashin;
+    return b.matchCount - a.matchCount || b.mashin - a.mashin || a.missing.length - b.missing.length;
+  };
+  const renderList = (arr, target) => {
+    const valid = arr.filter(x => x.matchCount > 0 && (!ownedOnly || x.item.owned)).sort(sorter).slice(0, 20);
+    $(target).innerHTML = valid.length ? valid.map((x, i) => `<div class="result-card">
+      <h4>${i+1}. ${escapeHtml(x.item.name)}</h4>
+      <div class="muted">${escapeHtml([x.item.rarity, x.item.type, x.item.id].filter(Boolean).join(' · '))}</div>
+      <div class="badges"><span class="badge match">매칭 ${x.matchCount}/${selectedSkills.length}</span><span class="badge mashin">마신합 ${formatNum(x.mashin)}</span><span class="badge miss">부족 ${x.missing.length}</span></div>
+      <details><summary>매칭/부족 보기</summary><div class="hint">매칭: ${escapeHtml(x.matched.join(', ') || '-')}</div><div class="hint">부족: ${escapeHtml(x.missing.join(', ') || '-')}</div></details>
+    </div>`).join('') : '<div class="hint">조건에 맞는 결과가 없습니다.</div>';
+  };
+  renderList((data.cards || []).map(c => scoreItem(c, 'card')), 'supportResults');
+  renderList((data.characters || []).map(c => scoreItem(c, 'character')), 'characterResults');
+}
+function renderRecommend() {
+  renderSelectedChips();
+  renderSelectedMashin();
+  renderRecommendations();
+}
+
+function parseMashinPaste(text) {
+  const rows = safe(text).replace(/\r/g, '').split('\n').map(line => line.split('\t'));
+  const parsed = [];
+  for (const r of rows) {
+    if (!r.length || !trim(r[0])) continue;
+    if (trim(r[0]).includes('스킬명')) continue;
+    parsed.push({
+      skill: trim(r[0]),
+      gain: parseMaybeNumber(r[1]),
+      gainPerPt: parseMaybeNumber(r[2]),
+      procRate: parseMaybeNumber(r[3]),
+      effectiveRate: parseMaybeNumber(r[4]),
+    });
+  }
+  return parsed;
+}
+function renderMashinEditor() {
+  const cid = $('mashinCourse').value || data.activeCourseId || data.courses?.[0]?.id;
+  const course = getCourseById(cid) || data.courses?.[0];
+  if (!course) return;
+  data.activeCourseId = course.id;
+  $('mashinCourseName').value = course.name || '';
+  const style = $('mashinStyle').value;
+  const q = trim($('mashinSearch').value).toLowerCase();
+  const rows = course.styles?.[style] || [];
+  const filtered = rows.map((r, idx) => ({...r, idx})).filter(r => !q || safe(r.skill).toLowerCase().includes(q));
+  $('mashinEditorTable').className = 'editor-table';
+  $('mashinEditorTable').innerHTML = `<thead><tr><th>#</th><th>스킬명</th><th>마신이득</th><th>마신/Pt</th><th>발동률</th><th>유효율</th><th>관리</th></tr></thead><tbody>` +
+    filtered.map((r, displayIdx) => `<tr data-mashin-idx="${r.idx}"><td>${displayIdx+1}</td>
+      <td><input class="wide" data-field="skill" value="${escapeHtml(r.skill)}"></td>
+      <td><input data-field="gain" value="${escapeHtml(r.gain)}"></td>
+      <td><input data-field="gainPerPt" value="${escapeHtml(r.gainPerPt)}"></td>
+      <td><input data-field="procRate" value="${escapeHtml(r.procRate)}"></td>
+      <td><input data-field="effectiveRate" value="${escapeHtml(r.effectiveRate)}"></td>
+      <td><button data-mashin-save="${r.idx}">저장</button> <button class="danger" data-mashin-del="${r.idx}">삭제</button></td></tr>`).join('') + '</tbody>';
+}
+function applyMashinRowFromInputs(idx) {
+  const course = getCourseById($('mashinCourse').value);
+  const style = $('mashinStyle').value;
+  const tr = document.querySelector(`tr[data-mashin-idx="${idx}"]`);
+  if (!course || !tr) return;
+  const row = {};
+  tr.querySelectorAll('input[data-field]').forEach(inp => row[inp.dataset.field] = ['gain','gainPerPt','procRate','effectiveRate'].includes(inp.dataset.field) ? parseMaybeNumber(inp.value) : trim(inp.value));
+  if (!row.skill) return toast('스킬명은 비울 수 없습니다.');
+  course.styles[style][idx] = row;
+  syncSkillNames([row.skill]);
+  renderAllLight();
+  toast('마신표 행을 저장했습니다.');
+}
+function replaceOrAppendMashin(mode) {
+  const parsed = parseMashinPaste($('mashinPaste').value);
+  if (!parsed.length) return toast('붙여넣은 마신표를 읽지 못했습니다.');
+  const course = getCourseById($('mashinCourse').value);
+  const style = $('mashinStyle').value;
+  course.styles ||= {}; course.styles[style] ||= [];
+  if (mode === 'replace') course.styles[style] = parsed;
+  else course.styles[style].push(...parsed);
+  syncSkillNames(parsed.map(r => r.skill));
+  $('mashinPasteInfo').textContent = `${parsed.length}행 반영`;
+  renderAllLight();
+  toast(`마신표 ${parsed.length}행을 반영했습니다.`);
+}
+
+function parseSkillDbPaste(text) {
+  const rows = safe(text).replace(/\r/g, '').split('\n').map(line => line.split('\t'));
+  const parsed = [];
+  for (const r of rows) {
+    if (!r.length || !trim(r[0])) continue;
+    if (trim(r[0]).includes('스킬명')) continue;
+    parsed.push({
+      skill: trim(r[0]),
+      characters: splitList(r[1] || ''),
+      characterEvents: splitList(r[2] || ''),
+      supportHints: splitList(r[3] || ''),
+      supportEvents: splitList(r[4] || ''),
+      status: trim(r[5] || ''),
+    });
+  }
+  return parsed;
+}
+function renderSkillDbEditor() {
+  const q = trim($('skillDbSearch').value).toLowerCase();
+  const limitVal = $('skillDbLimit').value;
+  let rows = (data.skills || []).map((r, idx) => ({...r, idx})).filter(r => !q || JSON.stringify(r).toLowerCase().includes(q));
+  if (limitVal !== 'all') rows = rows.slice(0, Number(limitVal));
+  $('skillDbEditorTable').className = 'editor-table';
+  $('skillDbEditorTable').innerHTML = `<thead><tr><th>#</th><th>스킬명</th><th>캐릭터</th><th>캐릭터 이벤트</th><th>서포트 힌트</th><th>서포트 이벤트</th><th>상태</th><th>관리</th></tr></thead><tbody>` +
+    rows.map((r, i) => `<tr data-skilldb-idx="${r.idx}"><td>${i+1}</td>
+      <td><input class="mid" data-field="skill" value="${escapeHtml(r.skill)}"></td>
+      <td><input class="wide" data-field="characters" value="${escapeHtml(joinList(r.characters))}"></td>
+      <td><input class="wide" data-field="characterEvents" value="${escapeHtml(joinList(r.characterEvents))}"></td>
+      <td><input class="wide" data-field="supportHints" value="${escapeHtml(joinList(r.supportHints))}"></td>
+      <td><input class="wide" data-field="supportEvents" value="${escapeHtml(joinList(r.supportEvents))}"></td>
+      <td><input class="mid" data-field="status" value="${escapeHtml(r.status)}"></td>
+      <td><button data-skilldb-save="${r.idx}">저장</button> <button class="danger" data-skilldb-del="${r.idx}">삭제</button></td></tr>`).join('') + '</tbody>';
+}
+function applySkillDbRowFromInputs(idx) {
+  const tr = document.querySelector(`tr[data-skilldb-idx="${idx}"]`);
+  if (!tr) return;
+  const row = {};
+  tr.querySelectorAll('input[data-field]').forEach(inp => {
+    const f = inp.dataset.field;
+    row[f] = ['characters','characterEvents','supportHints','supportEvents'].includes(f) ? splitList(inp.value) : trim(inp.value);
+  });
+  if (!row.skill) return toast('스킬명은 비울 수 없습니다.');
+  data.skills[idx] = row;
+  syncSkillNames([row.skill]);
+  rebuildGroupsFromSkillDb();
+  renderAllLight();
+  toast('스킬 DB 행을 저장했습니다.');
+}
+function mergeSkillDbRows(rows, replace=false) {
+  if (replace) data.skills = rows;
+  else {
+    const map = new Map((data.skills || []).map((r, i) => [r.skill, {row:r, idx:i}]));
+    rows.forEach(r => {
+      if (map.has(r.skill)) data.skills[map.get(r.skill).idx] = r;
+      else data.skills.push(r);
+    });
+  }
+  syncSkillNames(rows.map(r => r.skill));
+  rebuildGroupsFromSkillDb();
+  renderAllLight();
+}
+function rebuildGroupsFromSkillDb() {
+  // 기존 카드/캐릭터 DB는 유지하되, 스킬DB에만 새로 등장한 항목은 자동 생성한다.
+  const cardMap = new Map((data.cards || []).map(c => [c.name, c]));
+  const charMap = new Map((data.characters || []).map(c => [c.name, c]));
+  (data.skills || []).forEach(row => {
+    (row.supportHints || []).forEach(name => {
+      if (!cardMap.has(name)) { const item = { name, normalSkills: [], eventSkills: [], owned:false }; data.cards.push(item); cardMap.set(name, item); }
+      const item = cardMap.get(name); if (!item.normalSkills.includes(row.skill)) item.normalSkills.push(row.skill);
+    });
+    (row.supportEvents || []).forEach(name => {
+      if (!cardMap.has(name)) { const item = { name, normalSkills: [], eventSkills: [], owned:false }; data.cards.push(item); cardMap.set(name, item); }
+      const item = cardMap.get(name); if (!item.eventSkills.includes(row.skill)) item.eventSkills.push(row.skill);
+    });
+    (row.characters || []).forEach(name => {
+      if (!charMap.has(name)) { const item = { name, normalSkills: [], eventSkills: [], owned:false }; data.characters.push(item); charMap.set(name, item); }
+      const item = charMap.get(name); if (!item.normalSkills.includes(row.skill)) item.normalSkills.push(row.skill);
+    });
+    (row.characterEvents || []).forEach(name => {
+      if (!charMap.has(name)) { const item = { name, normalSkills: [], eventSkills: [], owned:false }; data.characters.push(item); charMap.set(name, item); }
+      const item = charMap.get(name); if (!item.eventSkills.includes(row.skill)) item.eventSkills.push(row.skill);
+    });
+  });
+}
+function syncSkillNames(names) {
+  data.skillNames = uniq([...(data.skillNames || []), ...(names || [])]);
+}
+function renderSkillList() {
+  $('skillListText').value = (data.skillNames || []).join('\n');
+  $('skillListInfo').textContent = `${data.skillNames?.length || 0}개`;
+}
+function mergeSkillListFromData() {
+  const names = [...(data.skillNames || [])];
+  (data.skills || []).forEach(r => names.push(r.skill));
+  (data.courses || []).forEach(c => STYLE_NAMES.forEach(st => (c.styles?.[st] || []).forEach(r => names.push(r.skill))));
+  data.skillNames = uniq(names);
+  renderAllLight();
+  toast('스킬 목록을 병합했습니다.');
+}
+function renderOwned() {
+  const type = $('ownedType').value;
+  const q = trim($('ownedSearch').value).toLowerCase();
+  const arr = (type === 'cards' ? data.cards : data.characters) || [];
+  const filtered = arr.filter(x => !q || safe(x.name).toLowerCase().includes(q)).slice(0, 600);
+  $('ownedList').innerHTML = filtered.map((x, i) => `<label class="owned-item"><input type="checkbox" data-owned-type="${type}" data-owned-name="${escapeHtml(x.name)}" ${x.owned ? 'checked' : ''}><span>${escapeHtml(x.name)}</span></label>`).join('') || '<div class="hint">검색 결과가 없습니다.</div>';
+}
+function setOwnedForFiltered(value) {
+  const type = $('ownedType').value;
+  const q = trim($('ownedSearch').value).toLowerCase();
+  const arr = (type === 'cards' ? data.cards : data.characters) || [];
+  arr.filter(x => !q || safe(x.name).toLowerCase().includes(q)).forEach(x => x.owned = value);
+  persistOwned();
+  renderOwned(); renderRecommendations();
+}
+
+function exportJSON(filename='site-data.json') {
+  const exportData = deepClone(data);
+  exportData.updatedAt = new Date().toISOString();
+  exportData.counts = {
+    courses: exportData.courses?.length || 0,
+    skillNames: exportData.skillNames?.length || 0,
+    skills: exportData.skills?.length || 0,
+    cards: exportData.cards?.length || 0,
+    characters: exportData.characters?.length || 0,
+    mashinRows: (exportData.courses || []).reduce((acc,c)=>acc+STYLE_NAMES.reduce((s,st)=>s+(c.styles?.[st]?.length||0),0),0),
+  };
+  downloadText(filename, JSON.stringify(exportData, null, 2), 'application/json;charset=utf-8');
+}
+function downloadText(filename, text, type='text/plain;charset=utf-8') {
+  const blob = new Blob([text], {type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function toMashinTsv(rows) {
+  return ['스킬명\t마신이득\t마신/Pt\t발동률\t유효율', ...(rows || []).map(r => [r.skill, r.gain, r.gainPerPt, r.procRate, r.effectiveRate].map(v => safe(v)).join('\t'))].join('\n');
+}
+function toSkillDbTsv(rows) {
+  return ['스킬명\t캐릭터\t캐릭터 (이벤트 획득)\t서포트 카드 (힌트 획득)\t서포트 카드 (이벤트 획득)\t상태', ...(rows || []).map(r => [r.skill, joinList(r.characters), joinList(r.characterEvents), joinList(r.supportHints), joinList(r.supportEvents), r.status].map(v => safe(v)).join('\t'))].join('\n');
+}
+function exportAllTsv() {
+  const parts = [];
+  (data.courses || []).forEach(c => STYLE_NAMES.forEach(st => {
+    parts.push(`### ${c.name} / ${st}\n` + toMashinTsv(c.styles?.[st] || []));
+  }));
+  parts.push('### 스킬 DB\n' + toSkillDbTsv(data.skills || []));
+  parts.push('### 스킬 목록\n' + (data.skillNames || []).join('\n'));
+  downloadText('uma-data-tables.txt', parts.join('\n\n'));
+}
+
+function renderAllLight() {
+  updateCounts(); renderDatalist(); renderRecommend();
+  if (activeTab === 'mashin') renderMashinEditor();
+  if (activeTab === 'skilldb') renderSkillDbEditor();
+  if (activeTab === 'skilllist') renderSkillList();
+  if (activeTab === 'owned') renderOwned();
+}
+function renderAll() {
+  renderCourseSelects(); renderDatalist(); renderRecommend(); renderMashinEditor(); renderSkillDbEditor(); renderSkillList(); renderOwned(); updateCounts();
+}
+
+function bindEvents() {
+  $('tabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-tab]'); if (!btn) return;
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + activeTab));
+    if (activeTab === 'mashin') renderMashinEditor();
+    if (activeTab === 'skilldb') renderSkillDbEditor();
+    if (activeTab === 'skilllist') renderSkillList();
+    if (activeTab === 'owned') renderOwned();
+  });
+  $('saveLocalBtn').onclick = saveLocal;
+  $('exportJsonTopBtn').onclick = () => exportJSON();
+  $('exportJsonBtn').onclick = () => exportJSON();
+  $('exportBackupBtn').onclick = () => exportJSON('uma-site-backup.json');
+  $('exportAllTsvBtn').onclick = exportAllTsv;
+  $('resetDataBtn').onclick = () => { if (confirm('브라우저 저장 데이터를 지우고 기본 데이터로 되돌릴까요?')) { localStorage.removeItem(STORAGE_KEY); data = deepClone(defaultData); renderAll(); toast('기본 데이터로 초기화했습니다.'); } };
+  $('importJsonInput').onchange = async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    data = JSON.parse(await file.text()); hydrateOwnedFromState(); renderAll(); saveLocal(); toast('JSON을 불러왔습니다.');
+  };
+
+  $('recCourse').onchange = () => { data.activeCourseId = $('recCourse').value; $('mashinCourse').value = data.activeCourseId; renderRecommend(); updateCounts(); };
+  $('recStyle').onchange = renderRecommend; $('recSort').onchange = renderRecommendations; $('recOwned').onchange = renderRecommendations;
+  $('addSkillBtn').onclick = () => { const s = trim($('skillSearchInput').value); if (!s) return; if (!selectedSkills.includes(s)) selectedSkills.push(s); $('skillSearchInput').value=''; renderRecommend(); localStorage.setItem(SELECTED_KEY, JSON.stringify(selectedSkills)); };
+  $('skillSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('addSkillBtn').click(); });
+  $('selectedSkills').addEventListener('click', e => { const s = e.target.dataset.removeSkill; if (!s) return; selectedSkills = selectedSkills.filter(x => x !== s); renderRecommend(); localStorage.setItem(SELECTED_KEY, JSON.stringify(selectedSkills)); });
+  $('clearSelectedBtn').onclick = () => { selectedSkills = []; renderRecommend(); };
+  $('exampleSelectedBtn').onclick = () => { selectedSkills = uniq(['터다지기','전광석화','스프린트 터보','빠른 걸음','우마무스메 애호가','장난은 끝이야!']); renderRecommend(); };
+
+  $('mashinCourse').onchange = () => { data.activeCourseId = $('mashinCourse').value; $('recCourse').value = data.activeCourseId; renderMashinEditor(); renderRecommend(); updateCounts(); };
+  $('mashinStyle').onchange = renderMashinEditor; $('mashinSearch').oninput = renderMashinEditor;
+  $('saveCourseNameBtn').onclick = () => { const c = getCourseById($('mashinCourse').value); if (c) { c.name = trim($('mashinCourseName').value) || c.id; renderCourseSelects(); renderAllLight(); toast('코스명을 저장했습니다.'); } };
+  $('addCourseBtn').onclick = () => { const name = prompt('새 코스 이름', '새 코스'); if (!name) return; const id = 'course-' + Date.now(); data.courses.push({id, name, styles:{도주:[],선행:[],선입:[],추입:[]}}); data.activeCourseId = id; renderAll(); toast('코스를 추가했습니다.'); };
+  $('deleteCourseBtn').onclick = () => { if ((data.courses||[]).length <= 1) return toast('코스는 최소 1개 필요합니다.'); const c = getCourseById($('mashinCourse').value); if (c && confirm(`코스 [${c.name}]을 삭제할까요?`)) { data.courses = data.courses.filter(x => x.id !== c.id); data.activeCourseId = data.courses[0].id; renderAll(); } };
+  $('addMashinRowBtn').onclick = () => { const c = getCourseById($('mashinCourse').value); const st = $('mashinStyle').value; c.styles ||= {}; c.styles[st] ||= []; c.styles[st].unshift({skill:'',gain:'',gainPerPt:'',procRate:'',effectiveRate:''}); renderMashinEditor(); };
+  $('mashinEditorTable').addEventListener('click', e => {
+    if (e.target.dataset.mashinSave) applyMashinRowFromInputs(Number(e.target.dataset.mashinSave));
+    if (e.target.dataset.mashinDel) { const c = getCourseById($('mashinCourse').value); const st = $('mashinStyle').value; c.styles[st].splice(Number(e.target.dataset.mashinDel),1); renderAllLight(); }
+  });
+  $('previewMashinPasteBtn').onclick = () => { const p = parseMashinPaste($('mashinPaste').value); $('mashinPasteInfo').textContent = `${p.length}행 인식`; };
+  $('replaceMashinPasteBtn').onclick = () => replaceOrAppendMashin('replace');
+  $('appendMashinPasteBtn').onclick = () => replaceOrAppendMashin('append');
+  $('exportMashinTsvBtn').onclick = () => { const c = getCourseById($('mashinCourse').value); const st = $('mashinStyle').value; downloadText(`${c.name}_${st}_마신표.tsv`, toMashinTsv(c.styles?.[st] || []), 'text/tab-separated-values;charset=utf-8'); };
+
+  $('skillDbSearch').oninput = renderSkillDbEditor; $('skillDbLimit').onchange = renderSkillDbEditor;
+  $('addSkillDbRowBtn').onclick = () => { data.skills.unshift({skill:'',characters:[],characterEvents:[],supportHints:[],supportEvents:[],status:'수기 추가'}); renderSkillDbEditor(); };
+  $('skillDbEditorTable').addEventListener('click', e => {
+    if (e.target.dataset.skilldbSave) applySkillDbRowFromInputs(Number(e.target.dataset.skilldbSave));
+    if (e.target.dataset.skilldbDel) { data.skills.splice(Number(e.target.dataset.skilldbDel),1); renderAllLight(); }
+  });
+  $('replaceSkillDbPasteBtn').onclick = () => { const rows = parseSkillDbPaste($('skillDbPaste').value); if (!rows.length) return toast('읽을 행이 없습니다.'); mergeSkillDbRows(rows, true); $('skillDbPasteInfo').textContent = `${rows.length}행으로 교체`; };
+  $('appendSkillDbPasteBtn').onclick = () => { const rows = parseSkillDbPaste($('skillDbPaste').value); if (!rows.length) return toast('읽을 행이 없습니다.'); mergeSkillDbRows(rows, false); $('skillDbPasteInfo').textContent = `${rows.length}행 추가/병합`; };
+  $('exportSkillDbTsvBtn').onclick = () => downloadText('skill-db.tsv', toSkillDbTsv(data.skills || []), 'text/tab-separated-values;charset=utf-8');
+
+  $('applySkillListBtn').onclick = () => { data.skillNames = uniq($('skillListText').value.split(/\r?\n/)); renderAllLight(); toast('스킬 목록을 적용했습니다.'); };
+  $('mergeSkillListBtn').onclick = mergeSkillListFromData;
+  $('exportSkillListBtn').onclick = () => downloadText('skill-list.txt', (data.skillNames||[]).join('\n'));
+
+  $('ownedSearch').oninput = renderOwned; $('ownedType').onchange = renderOwned;
+  $('ownedAllBtn').onclick = () => setOwnedForFiltered(true); $('ownedNoneBtn').onclick = () => setOwnedForFiltered(false);
+  $('ownedList').addEventListener('change', e => { const cb = e.target.closest('input[data-owned-name]'); if (!cb) return; const arr = cb.dataset.ownedType === 'cards' ? data.cards : data.characters; const item = arr.find(x => x.name === cb.dataset.ownedName); if (item) item.owned = cb.checked; persistOwned(); renderRecommendations(); });
+}
+
+init();

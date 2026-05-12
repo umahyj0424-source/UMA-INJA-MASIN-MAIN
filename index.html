@@ -1,247 +1,203 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>6월 단거리 인자작 & 마신표 추천기</title>
-  <style>
-    :root {
-      --bg: #f6f7fb;
-      --card: rgba(255,255,255,.92);
-      --ink: #14151a;
-      --muted: #686c78;
-      --line: #e4e7ef;
-      --accent: #5b5ff0;
-      --accent-2: #10b981;
-      --warn: #f59e0b;
-      --danger: #ef4444;
-      --shadow: 0 16px 40px rgba(20,21,26,.08);
-      --radius: 22px;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
-      background: radial-gradient(circle at top left, #eef2ff, transparent 30%), var(--bg);
-      color: var(--ink);
-    }
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      backdrop-filter: blur(18px);
-      background: rgba(246,247,251,.82);
-      border-bottom: 1px solid var(--line);
-    }
-    .wrap { width: min(1280px, calc(100% - 32px)); margin: 0 auto; }
-    .top { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 0 14px; }
-    h1 { margin:0; font-size: clamp(22px, 3vw, 34px); letter-spacing:-.04em; }
-    .subtitle { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
-    .tabs { display:flex; gap:8px; flex-wrap:wrap; padding: 0 0 14px; }
-    .tab { border:1px solid var(--line); background:#fff; border-radius:999px; padding:10px 14px; cursor:pointer; font-weight:700; color:#3b3e49; }
-    .tab.active { background: var(--ink); color:#fff; border-color:var(--ink); }
-    main { padding: 24px 0 60px; }
-    .grid { display:grid; grid-template-columns: 370px 1fr; gap:18px; align-items:start; }
-    @media (max-width: 980px) { .grid { grid-template-columns:1fr; } header { position: static; } }
-    .panel { background: var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow: var(--shadow); padding:18px; }
-    .panel h2 { margin:0 0 12px; font-size:20px; letter-spacing:-.03em; }
-    .panel h3 { margin:18px 0 10px; font-size:16px; }
-    label { display:block; font-size:13px; font-weight:800; color:#444857; margin-bottom:7px; }
-    input, select, textarea {
-      width:100%; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:14px;
-      padding:12px 13px; font: inherit; outline:none;
-    }
-    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(91,95,240,.12); }
-    .row { display:flex; gap:10px; align-items:center; }
-    .row > * { flex:1; }
-    .btn {
-      border:0; border-radius:14px; padding:12px 14px; background:var(--ink); color:#fff; cursor:pointer;
-      font-weight:800; font: inherit; white-space:nowrap;
-    }
-    .btn.secondary { background:#eef0f7; color:#222631; }
-    .btn.ghost { background:transparent; color:#343846; border:1px solid var(--line); }
-    .btn.good { background: var(--accent-2); }
-    .btn.small { padding:7px 9px; border-radius:10px; font-size:12px; }
-    .hint { color: var(--muted); font-size: 13px; line-height:1.55; }
-    .chips { display:flex; flex-wrap:wrap; gap:8px; }
-    .chip { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:7px 10px; background:#eef0ff; color:#252983; font-weight:800; font-size:13px; }
-    .chip button { border:0; background:transparent; color:inherit; cursor:pointer; font-weight:900; padding:0 2px; }
-    .suggestions { margin-top:8px; display:flex; flex-direction:column; gap:6px; max-height:230px; overflow:auto; }
-    .suggestion { text-align:left; border:1px solid var(--line); border-radius:12px; background:#fff; padding:9px 10px; cursor:pointer; }
-    .suggestion b { color:var(--accent); }
-    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
-    .stat { background:#fff; border:1px solid var(--line); border-radius:18px; padding:12px; }
-    .stat strong { display:block; font-size:22px; letter-spacing:-.04em; }
-    .stat span { color:var(--muted); font-size:12px; font-weight:800; }
-    table { width:100%; border-collapse:separate; border-spacing:0; }
-    th, td { border-bottom:1px solid var(--line); padding:10px 9px; vertical-align:top; text-align:left; }
-    th { color:#4b5160; font-size:12px; background:#fafbff; position:static; z-index:auto; white-space:nowrap; }
-    tr:hover td { background:#fcfcff; }
-    .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:18px; background:#fff; max-width:100%; }
-    .table-wrap table { min-width: 680px; }
-    th, td { line-height:1.45; }
-    td:not(:first-child), th:not(:first-child) { text-align:right; }
-    td:first-child, th:first-child { text-align:left; }
-    #selectedStats td:first-child, #selectedStats th:first-child { min-width:170px; }
-    #statsTable td:nth-child(2), #statsTable th:nth-child(2) { min-width:190px; text-align:left; }
-    .empty { padding:28px; text-align:center; color:var(--muted); border:1px dashed #cfd4e5; border-radius:18px; background:#fff; }
-    .result-list { display:flex; flex-direction:column; gap:12px; }
-    .result-card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:14px; }
-    .result-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
-    .title-line { font-weight:900; font-size:16px; letter-spacing:-.02em; }
-    .meta { color: var(--muted); font-size:12px; margin-top:4px; }
-    .badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-    .badge { border-radius:999px; padding:5px 8px; font-size:12px; font-weight:800; background:#f1f3f9; color:#333846; }
-    .badge.normal { background:#eaf7ef; color:#087a4c; }
-    .badge.event { background:#fff3df; color:#985d00; }
-    .badge.miss { background:#feecec; color:#a92323; }
-    .badge.score { background:#eceeff; color:#3438a2; }
-    .star { border:1px solid var(--line); background:#fff; color:#a7aab5; border-radius:999px; width:34px; height:34px; cursor:pointer; font-size:17px; }
-    .star.on { color:#f59e0b; border-color:#f5c361; background:#fff8e8; }
-    details { margin-top:10px; }
-    summary { cursor:pointer; color:#555b68; font-weight:800; font-size:13px; }
-    .split { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    @media (max-width:720px) { .split { grid-template-columns:1fr; } .top { align-items:flex-start; flex-direction:column; } }
-    .section { display:none; }
-    .section.active { display:block; }
-    .toolbar { display:flex; gap:10px; align-items:end; flex-wrap:wrap; margin-bottom:14px; }
-    .toolbar > div { min-width:180px; flex:1; }
-    .mini { font-size:12px; color:var(--muted); }
-    mark { background:#fff1a8; padding:0 2px; border-radius:4px; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <div class="top">
-        <div>
-          <h1>6월 단거리 인자작 & 마신표 추천기</h1>
-          <p class="subtitle">스킬 선택 → 마신표 확인 → 서포트카드/캐릭터 추천 · 자동 갱신 대응 구조</p>
-        </div>
-        <div class="mini" id="dataCounts"></div>
-      </div>
-      <nav class="tabs">
-        <button class="tab active" data-tab="recommend">추천기</button>
-        <button class="tab" data-tab="stats">마신표</button>
-        <button class="tab" data-tab="skilldb">스킬 DB</button>
-        <button class="tab" data-tab="owned">보유 관리</button>
-      </nav>
+  <header class="topbar">
+    <div>
+      <h1>6월 단거리 인자작 & 마신표 추천기</h1>
+      <p>마신표 · 스킬 DB · 스킬 목록을 사이트 안에서 직접 수정하고 저장할 수 있는 정적 사이트</p>
+    </div>
+    <div class="top-actions">
+      <div id="summaryCounts" class="summary-counts">불러오는 중...</div>
+      <button id="saveLocalBtn" class="primary small">브라우저 저장</button>
+      <button id="exportJsonTopBtn" class="small">site-data.json 내보내기</button>
     </div>
   </header>
 
-  <main class="wrap">
-    <section id="recommend" class="section active">
-      <div class="grid">
-        <aside class="panel">
+  <nav class="tabs" id="tabs">
+    <button data-tab="recommend" class="active">추천기</button>
+    <button data-tab="mashin">마신표</button>
+    <button data-tab="skilldb">스킬 DB</button>
+    <button data-tab="skilllist">스킬 목록</button>
+    <button data-tab="owned">보유 관리</button>
+    <button data-tab="data">데이터 관리</button>
+  </nav>
+
+  <main>
+    <section id="tab-recommend" class="tab-panel active">
+      <div class="grid two">
+        <section class="card">
           <h2>희망 스킬 입력</h2>
+          <div class="form-grid two-col">
+            <label>코스<select id="recCourse"></select></label>
+            <label>각질<select id="recStyle"><option>도주</option><option>선행</option><option>선입</option><option>추입</option></select></label>
+            <label>추천 정렬<select id="recSort"><option value="match">매칭개수 우선</option><option value="mashin">마신합 우선</option><option value="missing">부족 스킬 적은 순</option></select></label>
+            <label>필터<select id="recOwned"><option value="all">전체</option><option value="owned">보유만</option></select></label>
+          </div>
+          <div class="add-row">
+            <input id="skillSearchInput" list="skillDatalist" placeholder="스킬명 검색 또는 입력" />
+            <datalist id="skillDatalist"></datalist>
+            <button id="addSkillBtn" class="primary">추가</button>
+          </div>
+          <div class="chip-list" id="selectedSkills"></div>
+          <div class="hint">최대 30개까지 추천 계산. 마신표/스킬 DB를 수정하면 바로 반영됩니다.</div>
+          <button id="clearSelectedBtn">선택 초기화</button>
+          <button id="exampleSelectedBtn">예시 넣기</button>
+        </section>
+
+        <section class="card">
+          <h2>선택 스킬 마신표</h2>
+          <div class="kpi-row">
+            <div><b id="kpiSelected">0</b><span>선택 스킬</span></div>
+            <div><b id="kpiMashin">0</b><span>마신합</span></div>
+            <div><b id="kpiMatches">0</b><span>마신표 매칭</span></div>
+          </div>
+          <div class="table-wrap slim"><table id="selectedMashinTable"></table></div>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2>추천 결과</h2>
+        <div class="grid two">
           <div>
-            <label for="courseSelect">코스</label>
-            <select id="courseSelect"></select>
+            <h3>서포트카드 TOP</h3>
+            <div id="supportResults" class="result-list"></div>
           </div>
-          <div class="row" style="margin-top:12px;">
-            <div>
-              <label for="styleSelect">각질</label>
-              <select id="styleSelect">
-                <option>도주</option><option>선행</option><option>선입</option><option>추입</option>
-              </select>
-            </div>
-            <div>
-              <label for="sortSelect">추천 정렬</label>
-              <select id="sortSelect">
-                <option value="score">마신합 우선</option>
-                <option value="count">매칭개수 우선</option>
-                <option value="name">이름순</option>
-              </select>
-            </div>
+          <div>
+            <h3>캐릭터 TOP</h3>
+            <div id="characterResults" class="result-list"></div>
           </div>
-
-          <h3>스킬 검색</h3>
-          <div class="row">
-            <input id="skillInput" placeholder="예: 터다지기, 전광석화, 꽃봉오리" autocomplete="off" />
-            <button class="btn" id="addSkillBtn">추가</button>
-          </div>
-          <div class="suggestions" id="skillSuggestions"></div>
-
-          <h3>선택된 스킬</h3>
-          <div class="chips" id="selectedChips"></div>
-          <p class="hint">최대 제한은 없지만, 엑셀 원본 방식처럼 15개 안팎으로 쓰는 걸 권장. 같은 스킬은 중복 선택되지 않음.</p>
-          <div class="row">
-            <button class="btn secondary" id="clearSelectedBtn">선택 초기화</button>
-            <button class="btn ghost" id="sampleBtn">예시 넣기</button>
-          </div>
-
-          <h3>필터</h3>
-          <label><input type="checkbox" id="ownedOnly" style="width:auto; margin-right:6px;" /> 보유한 서포트/캐릭터만 보기</label>
-          <p class="hint">보유 관리는 브라우저에 저장됨. 다른 사람에게 사이트 주소를 보내도 내 보유 체크 상태는 공유되지 않음.</p>
-        </aside>
-
-        <div class="result-list">
-          <section class="panel">
-            <h2>선택 스킬 마신표</h2>
-            <div class="stats" id="summaryStats"></div>
-            <div id="selectedStats"></div>
-          </section>
-          <section class="panel">
-            <h2>추천 결과</h2>
-            <div class="split">
-              <div>
-                <h3>서포트카드 TOP</h3>
-                <div id="cardResults" class="result-list"></div>
-              </div>
-              <div>
-                <h3>캐릭터 TOP</h3>
-                <div id="charResults" class="result-list"></div>
-              </div>
-            </div>
-          </section>
         </div>
-      </div>
+      </section>
     </section>
 
-    <section id="stats" class="section">
-      <div class="panel">
-        <h2>마신표 검색</h2>
-        <div class="toolbar">
-          <div><label>코스</label><select id="statsCourse"></select></div>
-          <div><label>각질</label><select id="statsStyle"><option>도주</option><option>선행</option><option>선입</option><option>추입</option></select></div>
-          <div><label>검색</label><input id="statsSearch" placeholder="스킬명 검색" /></div>
-          <div><label>정렬</label><select id="statsSort"><option value="gain">마신이득순</option><option value="pt">마신/Pt순</option><option value="name">이름순</option></select></div>
-        </div>
-        <div id="statsTable"></div>
-      </div>
-    </section>
-
-    <section id="skilldb" class="section">
-      <div class="panel">
-        <h2>스킬 DB / 획득처 검색</h2>
-        <div class="toolbar">
-          <div><label>스킬 검색</label><input id="dbSearch" placeholder="스킬명, 일본어명, 카테고리 검색" /></div>
-          <div><label>상태</label><select id="dbFilter"><option value="all">전체</option><option value="source">획득처 있음</option><option value="stats">마신표 있음</option></select></div>
-        </div>
-        <div id="skillDbResults" class="result-list"></div>
-      </div>
-    </section>
-
-    <section id="owned" class="section">
-      <div class="grid">
-        <aside class="panel">
-          <h2>보유 목록 관리</h2>
-          <p class="hint">서포트카드나 캐릭터를 체크해두면 추천기에서 “보유만 보기” 필터를 쓸 수 있음. 데이터는 이 브라우저의 localStorage에만 저장됨.</p>
-          <div class="row">
-            <button class="btn secondary" id="clearOwnedBtn">보유 전체 초기화</button>
-            <button class="btn ghost" id="exportOwnedBtn">보유 JSON 복사</button>
+    <section id="tab-mashin" class="tab-panel">
+      <section class="card">
+        <div class="section-head">
+          <div>
+            <h2>마신표 편집</h2>
+            <p>엑셀에서 A:E 열을 그대로 복사해서 붙여넣으면 됩니다. 형식: 스킬명 / 마신이득 / 마신/Pt / 발동률 / 유효율</p>
           </div>
-          <h3>빠른 검색</h3>
-          <input id="ownedSearch" placeholder="카드/캐릭터 이름 검색" />
-        </aside>
-        <div class="panel">
-          <h2>서포트카드 / 캐릭터</h2>
-          <div id="ownedList" class="result-list"></div>
+          <div class="head-actions">
+            <button id="addCourseBtn">코스 추가</button>
+            <button id="deleteCourseBtn" class="danger">현재 코스 삭제</button>
+          </div>
         </div>
-      </div>
+        <div class="form-grid four-col">
+          <label>코스<select id="mashinCourse"></select></label>
+          <label>코스명<input id="mashinCourseName" /></label>
+          <label>각질<select id="mashinStyle"><option>도주</option><option>선행</option><option>선입</option><option>추입</option></select></label>
+          <label>검색<input id="mashinSearch" placeholder="스킬명 검색" /></label>
+        </div>
+        <div class="button-row">
+          <button id="saveCourseNameBtn" class="primary">코스명 저장</button>
+          <button id="addMashinRowBtn">행 추가</button>
+          <button id="exportMashinTsvBtn">현재 표 TSV 다운로드</button>
+        </div>
+        <div class="paste-box">
+          <h3>엑셀 마신표 붙여넣기</h3>
+          <textarea id="mashinPaste" placeholder="엑셀에서 도주/선행/선입/추입 시트의 A:E 범위를 복사해서 여기에 붙여넣기"></textarea>
+          <div class="button-row">
+            <button id="previewMashinPasteBtn">미리보기</button>
+            <button id="replaceMashinPasteBtn" class="primary">현재 각질 표로 교체</button>
+            <button id="appendMashinPasteBtn">아래에 추가</button>
+            <span id="mashinPasteInfo" class="status"></span>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="mashinEditorTable"></table></div>
+      </section>
+    </section>
+
+    <section id="tab-skilldb" class="tab-panel">
+      <section class="card">
+        <div class="section-head">
+          <div>
+            <h2>스킬 DB 편집</h2>
+            <p>스킬별 캐릭터/서포트카드 획득처를 수정합니다. 쉼표로 여러 항목을 구분합니다.</p>
+          </div>
+          <div class="head-actions">
+            <button id="addSkillDbRowBtn">행 추가</button>
+            <button id="exportSkillDbTsvBtn">TSV 다운로드</button>
+          </div>
+        </div>
+        <div class="form-grid two-col">
+          <label>검색<input id="skillDbSearch" placeholder="스킬명/카드/캐릭터 검색" /></label>
+          <label>표시<select id="skillDbLimit"><option value="100">100개</option><option value="300">300개</option><option value="all">전체</option></select></label>
+        </div>
+        <div class="paste-box">
+          <h3>스킬 DB 붙여넣기</h3>
+          <textarea id="skillDbPaste" placeholder="스킬명	캐릭터	캐릭터 (이벤트 획득)	서포트 카드 (힌트 획득)	서포트 카드 (이벤트 획득)	상태"></textarea>
+          <div class="button-row">
+            <button id="replaceSkillDbPasteBtn" class="primary">스킬 DB 교체</button>
+            <button id="appendSkillDbPasteBtn">아래에 추가/병합</button>
+            <span id="skillDbPasteInfo" class="status"></span>
+          </div>
+        </div>
+        <div class="table-wrap"><table id="skillDbEditorTable"></table></div>
+      </section>
+    </section>
+
+    <section id="tab-skilllist" class="tab-panel">
+      <section class="card">
+        <h2>스킬 목록 편집</h2>
+        <p>자동완성 후보와 사이트 전체 스킬 수 기준이 되는 목록입니다. 한 줄에 하나씩 입력하세요.</p>
+        <textarea id="skillListText" class="large-textarea"></textarea>
+        <div class="button-row">
+          <button id="applySkillListBtn" class="primary">스킬 목록 적용</button>
+          <button id="mergeSkillListBtn">마신표/DB에서 스킬명 합치기</button>
+          <button id="exportSkillListBtn">TXT 다운로드</button>
+          <span id="skillListInfo" class="status"></span>
+        </div>
+      </section>
+    </section>
+
+    <section id="tab-owned" class="tab-panel">
+      <section class="card">
+        <h2>보유 관리</h2>
+        <p>보유 상태는 브라우저에 저장됩니다. 사이트 파일에는 포함되지만, 주소만 공유해도 내 보유 상태는 공유되지 않습니다.</p>
+        <div class="form-grid two-col">
+          <label>검색<input id="ownedSearch" placeholder="카드/캐릭터 검색" /></label>
+          <label>대상<select id="ownedType"><option value="cards">서포트카드</option><option value="characters">캐릭터</option></select></label>
+        </div>
+        <div class="button-row">
+          <button id="ownedAllBtn">검색 결과 모두 보유</button>
+          <button id="ownedNoneBtn">검색 결과 모두 미보유</button>
+        </div>
+        <div id="ownedList" class="owned-list"></div>
+      </section>
+    </section>
+
+    <section id="tab-data" class="tab-panel">
+      <section class="card">
+        <h2>데이터 관리</h2>
+        <div class="notice">
+          이 사이트는 정적 사이트라서 서버 DB를 직접 수정하지 않습니다. 수정 내용은 먼저 <b>브라우저 저장소</b>에 저장되고, 영구 배포하려면 <b>site-data.json 내보내기</b> 후 GitHub의 <code>data/site-data.json</code>을 교체하면 됩니다.
+        </div>
+        <div class="grid two">
+          <div>
+            <h3>내보내기</h3>
+            <button id="exportJsonBtn" class="primary">site-data.json 다운로드</button>
+            <button id="exportBackupBtn">백업 JSON 다운로드</button>
+            <button id="exportAllTsvBtn">전체 TSV 묶음 다운로드</button>
+          </div>
+          <div>
+            <h3>불러오기</h3>
+            <input type="file" id="importJsonInput" accept=".json" />
+            <button id="resetDataBtn" class="danger">기본 데이터로 초기화</button>
+          </div>
+        </div>
+        <h3>현재 데이터 요약</h3>
+        <pre id="dataSummary" class="summary-box"></pre>
+      </section>
     </section>
   </main>
 
-  <script src="app.js"></script>
+  <div id="toast" class="toast"></div>
+  <script src="app.js?v=editable1"></script>
 </body>
 </html>
