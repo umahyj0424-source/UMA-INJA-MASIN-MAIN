@@ -18,3 +18,7 @@
 # 특정 각질만 직접 지정하고 싶으면:
 # 6월 단거리 10501|선행|https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects
 # 6월 단거리 10501|선행|https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects/leader
+
+https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects
+https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10903/effects
+https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10811/effects
