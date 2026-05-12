@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>6월 단거리 인자작 & 마신표 추천기</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: rgba(255,255,255,.92);
+      --ink: #14151a;
+      --muted: #686c78;
+      --line: #e4e7ef;
+      --accent: #5b5ff0;
+      --accent-2: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 16px 40px rgba(20,21,26,.08);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+      background: radial-gradient(circle at top left, #eef2ff, transparent 30%), var(--bg);
+      color: var(--ink);
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(18px);
+      background: rgba(246,247,251,.82);
+      border-bottom: 1px solid var(--line);
+    }
+    .wrap { width: min(1280px, calc(100% - 32px)); margin: 0 auto; }
+    .top { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 0 14px; }
+    h1 { margin:0; font-size: clamp(22px, 3vw, 34px); letter-spacing:-.04em; }
+    .subtitle { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; padding: 0 0 14px; }
+    .tab { border:1px solid var(--line); background:#fff; border-radius:999px; padding:10px 14px; cursor:pointer; font-weight:700; color:#3b3e49; }
+    .tab.active { background: var(--ink); color:#fff; border-color:var(--ink); }
+    main { padding: 24px 0 60px; }
+    .grid { display:grid; grid-template-columns: 370px 1fr; gap:18px; align-items:start; }
+    @media (max-width: 980px) { .grid { grid-template-columns:1fr; } header { position: static; } }
+    .panel { background: var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow: var(--shadow); padding:18px; }
+    .panel h2 { margin:0 0 12px; font-size:20px; letter-spacing:-.03em; }
+    .panel h3 { margin:18px 0 10px; font-size:16px; }
+    label { display:block; font-size:13px; font-weight:800; color:#444857; margin-bottom:7px; }
+    input, select, textarea {
+      width:100%; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:14px;
+      padding:12px 13px; font: inherit; outline:none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(91,95,240,.12); }
+    .row { display:flex; gap:10px; align-items:center; }
+    .row > * { flex:1; }
+    .btn {
+      border:0; border-radius:14px; padding:12px 14px; background:var(--ink); color:#fff; cursor:pointer;
+      font-weight:800; font: inherit; white-space:nowrap;
+    }
+    .btn.secondary { background:#eef0f7; color:#222631; }
+    .btn.ghost { background:transparent; color:#343846; border:1px solid var(--line); }
+    .btn.good { background: var(--accent-2); }
+    .btn.small { padding:7px 9px; border-radius:10px; font-size:12px; }
+    .hint { color: var(--muted); font-size: 13px; line-height:1.55; }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:7px 10px; background:#eef0ff; color:#252983; font-weight:800; font-size:13px; }
+    .chip button { border:0; background:transparent; color:inherit; cursor:pointer; font-weight:900; padding:0 2px; }
+    .suggestions { margin-top:8px; display:flex; flex-direction:column; gap:6px; max-height:230px; overflow:auto; }
+    .suggestion { text-align:left; border:1px solid var(--line); border-radius:12px; background:#fff; padding:9px 10px; cursor:pointer; }
+    .suggestion b { color:var(--accent); }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+    .stat { background:#fff; border:1px solid var(--line); border-radius:18px; padding:12px; }
+    .stat strong { display:block; font-size:22px; letter-spacing:-.04em; }
+    .stat span { color:var(--muted); font-size:12px; font-weight:800; }
+    table { width:100%; border-collapse:separate; border-spacing:0; }
+    th, td { border-bottom:1px solid var(--line); padding:10px 9px; vertical-align:top; text-align:left; }
+    th { color:#4b5160; font-size:12px; background:#fafbff; position:sticky; top:105px; z-index:5; }
+    @media (max-width:980px) { th { position:static; } }
+    tr:hover td { background:#fcfcff; }
+    .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:18px; background:#fff; }
+    .empty { padding:28px; text-align:center; color:var(--muted); border:1px dashed #cfd4e5; border-radius:18px; background:#fff; }
+    .result-list { display:flex; flex-direction:column; gap:12px; }
+    .result-card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:14px; }
+    .result-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .title-line { font-weight:900; font-size:16px; letter-spacing:-.02em; }
+    .meta { color: var(--muted); font-size:12px; margin-top:4px; }
+    .badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+    .badge { border-radius:999px; padding:5px 8px; font-size:12px; font-weight:800; background:#f1f3f9; color:#333846; }
+    .badge.normal { background:#eaf7ef; color:#087a4c; }
+    .badge.event { background:#fff3df; color:#985d00; }
+    .badge.miss { background:#feecec; color:#a92323; }
+    .badge.score { background:#eceeff; color:#3438a2; }
+    .star { border:1px solid var(--line); background:#fff; color:#a7aab5; border-radius:999px; width:34px; height:34px; cursor:pointer; font-size:17px; }
+    .star.on { color:#f59e0b; border-color:#f5c361; background:#fff8e8; }
+    details { margin-top:10px; }
+    summary { cursor:pointer; color:#555b68; font-weight:800; font-size:13px; }
+    .split { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width:720px) { .split { grid-template-columns:1fr; } .top { align-items:flex-start; flex-direction:column; } }
+    .section { display:none; }
+    .section.active { display:block; }
+    .toolbar { display:flex; gap:10px; align-items:end; flex-wrap:wrap; margin-bottom:14px; }
+    .toolbar > div { min-width:180px; flex:1; }
+    .mini { font-size:12px; color:var(--muted); }
+    mark { background:#fff1a8; padding:0 2px; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>6월 단거리 인자작 & 마신표 추천기</h1>
+          <p class="subtitle">스킬 선택 → 마신표 확인 → 서포트카드/캐릭터 추천 · 자동 갱신 대응 구조</p>
+        </div>
+        <div class="mini" id="dataCounts"></div>
+      </div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="recommend">추천기</button>
+        <button class="tab" data-tab="stats">마신표</button>
+        <button class="tab" data-tab="skilldb">스킬 DB</button>
+        <button class="tab" data-tab="owned">보유 관리</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="recommend" class="section active">
+      <div class="grid">
+        <aside class="panel">
+          <h2>희망 스킬 입력</h2>
+          <div>
+            <label for="courseSelect">코스</label>
+            <select id="courseSelect"></select>
+          </div>
+          <div class="row" style="margin-top:12px;">
+            <div>
+              <label for="styleSelect">각질</label>
+              <select id="styleSelect">
+                <option>도주</option><option>선행</option><option>선입</option><option>추입</option>
+              </select>
+            </div>
+            <div>
+              <label for="sortSelect">추천 정렬</label>
+              <select id="sortSelect">
+                <option value="score">마신합 우선</option>
+                <option value="count">매칭개수 우선</option>
+                <option value="name">이름순</option>
+              </select>
+            </div>
+          </div>
+
+          <h3>스킬 검색</h3>
+          <div class="row">
+            <input id="skillInput" placeholder="예: 터다지기, 전광석화, 꽃봉오리" autocomplete="off" />
+            <button class="btn" id="addSkillBtn">추가</button>
+          </div>
+          <div class="suggestions" id="skillSuggestions"></div>
+
+          <h3>선택된 스킬</h3>
+          <div class="chips" id="selectedChips"></div>
+          <p class="hint">최대 제한은 없지만, 엑셀 원본 방식처럼 15개 안팎으로 쓰는 걸 권장. 같은 스킬은 중복 선택되지 않음.</p>
+          <div class="row">
+            <button class="btn secondary" id="clearSelectedBtn">선택 초기화</button>
+            <button class="btn ghost" id="sampleBtn">예시 넣기</button>
+          </div>
+
+          <h3>필터</h3>
+          <label><input type="checkbox" id="ownedOnly" style="width:auto; margin-right:6px;" /> 보유한 서포트/캐릭터만 보기</label>
+          <p class="hint">보유 관리는 브라우저에 저장됨. 다른 사람에게 사이트 주소를 보내도 내 보유 체크 상태는 공유되지 않음.</p>
+        </aside>
+
+        <div class="result-list">
+          <section class="panel">
+            <h2>선택 스킬 마신표</h2>
+            <div class="stats" id="summaryStats"></div>
+            <div id="selectedStats"></div>
+          </section>
+          <section class="panel">
+            <h2>추천 결과</h2>
+            <div class="split">
+              <div>
+                <h3>서포트카드 TOP</h3>
+                <div id="cardResults" class="result-list"></div>
+              </div>
+              <div>
+                <h3>캐릭터 TOP</h3>
+                <div id="charResults" class="result-list"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="stats" class="section">
+      <div class="panel">
+        <h2>마신표 검색</h2>
+        <div class="toolbar">
+          <div><label>코스</label><select id="statsCourse"></select></div>
+          <div><label>각질</label><select id="statsStyle"><option>도주</option><option>선행</option><option>선입</option><option>추입</option></select></div>
+          <div><label>검색</label><input id="statsSearch" placeholder="스킬명 검색" /></div>
+          <div><label>정렬</label><select id="statsSort"><option value="gain">마신이득순</option><option value="pt">마신/Pt순</option><option value="name">이름순</option></select></div>
+        </div>
+        <div id="statsTable"></div>
+      </div>
+    </section>
+
+    <section id="skilldb" class="section">
+      <div class="panel">
+        <h2>스킬 DB / 획득처 검색</h2>
+        <div class="toolbar">
+          <div><label>스킬 검색</label><input id="dbSearch" placeholder="스킬명, 일본어명, 카테고리 검색" /></div>
+          <div><label>상태</label><select id="dbFilter"><option value="all">전체</option><option value="source">획득처 있음</option><option value="stats">마신표 있음</option></select></div>
+        </div>
+        <div id="skillDbResults" class="result-list"></div>
+      </div>
+    </section>
+
+    <section id="owned" class="section">
+      <div class="grid">
+        <aside class="panel">
+          <h2>보유 목록 관리</h2>
+          <p class="hint">서포트카드나 캐릭터를 체크해두면 추천기에서 “보유만 보기” 필터를 쓸 수 있음. 데이터는 이 브라우저의 localStorage에만 저장됨.</p>
+          <div class="row">
+            <button class="btn secondary" id="clearOwnedBtn">보유 전체 초기화</button>
+            <button class="btn ghost" id="exportOwnedBtn">보유 JSON 복사</button>
+          </div>
+          <h3>빠른 검색</h3>
+          <input id="ownedSearch" placeholder="카드/캐릭터 이름 검색" />
+        </aside>
+        <div class="panel">
+          <h2>서포트카드 / 캐릭터</h2>
+          <div id="ownedList" class="result-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

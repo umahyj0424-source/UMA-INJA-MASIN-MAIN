@@ -1,0 +1,6 @@
+selenium==4.*
+webdriver-manager==4.*
+requests==2.*
+beautifulsoup4==4.*
+pandas==2.*
+openpyxl==3.*
