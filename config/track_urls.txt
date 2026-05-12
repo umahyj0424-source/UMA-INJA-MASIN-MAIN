@@ -19,6 +19,6 @@
 # 6월 단거리 10501|선행|https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects
 # 6월 단거리 10501|선행|https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects/leader
 
-https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects
-https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10903/effects
-https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10811/effects
+6월 단거리 10501|https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects
+7월 마일챔미 10903|https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10903/effects
+8월 봄천황상 10811|https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10811/effects
