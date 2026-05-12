@@ -1,5 +1,5 @@
 {
-  "startedAt": "2026-05-12T10:51:34.012233+00:00",
+  "startedAt": "2026-05-12T12:35:40.037685+00:00",
   "mode": "auto",
   "skillNameCount": 1438,
   "skillNameUniqueCount": 1432,
@@ -7,87 +7,99 @@
   "mashin": [
     {
       "courseId": "10501",
-      "name": "코스 10501",
+      "name": "6월 단거리 10501",
       "style": "도주",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects/runner",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10501",
-      "name": "코스 10501",
+      "name": "6월 단거리 10501",
       "style": "선행",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects/leader",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10501",
-      "name": "코스 10501",
+      "name": "6월 단거리 10501",
       "style": "선입",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects/betweener",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10501",
-      "name": "코스 10501",
+      "name": "6월 단거리 10501",
       "style": "추입",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10501/effects/chaser",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10903",
-      "name": "코스 10903",
+      "name": "7월 마일챔미 10903",
       "style": "도주",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10903/effects/runner",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10903",
-      "name": "코스 10903",
+      "name": "7월 마일챔미 10903",
       "style": "선행",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10903/effects/leader",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10903",
-      "name": "코스 10903",
+      "name": "7월 마일챔미 10903",
       "style": "선입",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10903/effects/betweener",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10903",
-      "name": "코스 10903",
+      "name": "7월 마일챔미 10903",
       "style": "추입",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10903/effects/chaser",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10811",
-      "name": "코스 10811",
+      "name": "8월 봄천황상 10811",
       "style": "도주",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10811/effects/runner",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10811",
-      "name": "코스 10811",
+      "name": "8월 봄천황상 10811",
       "style": "선행",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10811/effects/leader",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10811",
-      "name": "코스 10811",
+      "name": "8월 봄천황상 10811",
       "style": "선입",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10811/effects/betweener",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     },
     {
       "courseId": "10811",
-      "name": "코스 10811",
+      "name": "8월 봄천황상 10811",
       "style": "추입",
       "url": "https://xn--gck1f423k.xn--1bvt37a.tools/race/courses/10811/effects/chaser",
-      "rows": 0
+      "rows": 0,
+      "translatedRows": 0
     }
   ],
   "sourceRows": 1438
